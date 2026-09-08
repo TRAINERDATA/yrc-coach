@@ -23,5 +23,7 @@ services:
         sync: false          # strava.com/settings/api
       - key: STRAVA_CLIENT_SECRET
         sync: false
+      - key: ADMIN_KEY
+        sync: false          # 아무 긴 문자열. cron-job 이 POST /run-all/<ADMIN_KEY> 로 전원 브리핑 실행
       - key: DATABASE_URL
         sync: false          # (선택) Supabase/Neon 무료 Postgres 연결 문자열. 넣으면 데이터가 재시작 후에도 유지됨

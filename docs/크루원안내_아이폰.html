@@ -1,0 +1,255 @@
+<title>YRC 코치 연결 안내 · 아이폰</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#f4f6f9;--panel:#ffffff;--ink:#16213a;--ink2:#4b5567;--muted:#7b8494;--accent:#0f9d8f;--accent-ink:#0b6f65;--accent-soft:#e3f5f2;--line:#e2e6ee;--warn-bg:#fff6e5;--warn:#8a5200;--good:#1c8f5a;--good-bg:#e7f6ee;--code:#eef2f7;--num:#16213a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1220;--panel:#141c2e;--ink:#eef2f8;--ink2:#c7d0df;--muted:#8b97ad;--accent:#2dd4bf;--accent-ink:#2dd4bf;--accent-soft:#12302f;--line:#243050;--warn-bg:#33270f;--warn:#fbbf24;--good:#34d399;--good-bg:#0f2e22;--code:#1b2540;--num:#2dd4bf}}
+:root[data-theme="dark"]{--bg:#0b1220;--panel:#141c2e;--ink:#eef2f8;--ink2:#c7d0df;--muted:#8b97ad;--accent:#2dd4bf;--accent-ink:#2dd4bf;--accent-soft:#12302f;--line:#243050;--warn-bg:#33270f;--warn:#fbbf24;--good:#34d399;--good-bg:#0f2e22;--code:#1b2540;--num:#2dd4bf}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR",-apple-system,system-ui,sans-serif;font-size:16px;line-height:1.75;-webkit-text-size-adjust:100%}
+main{max-width:720px;margin:0 auto;padding:36px 20px 80px}
+h1,h2,h3{font-family:"IBM Plex Sans KR","Noto Sans KR",sans-serif;text-wrap:balance;margin:0}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+h1{font-size:32px;line-height:1.25;margin:10px 0 14px}
+.lead{color:var(--ink2);font-size:17px;margin:0 0 22px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:14px;margin-bottom:28px}
+.meta b{color:var(--ink)}
+.need{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:34px}
+.need h2{font-size:15px;color:var(--muted);letter-spacing:.06em;margin-bottom:10px}
+.need ul{margin:0;padding-left:20px}
+.need li{margin:4px 0}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin:0 0 40px;padding:0;list-style:none}
+.toc a{display:block;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);text-decoration:none;font-size:14px}
+.toc a span{color:var(--accent-ink);font-weight:700;margin-right:6px}
+.step{position:relative;padding:0 0 0 58px;margin:0 0 44px}
+.step .n{position:absolute;left:0;top:2px;width:42px;height:42px;border-radius:50%;background:var(--num);color:var(--panel);display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Sans KR",sans-serif;font-weight:700;font-size:18px}
+:root[data-theme="dark"] .step .n,{color:#0b1220}
+.step h2{font-size:22px;margin-bottom:6px}
+.step .why{color:var(--muted);font-size:14px;margin:0 0 14px}
+.step ol{padding-left:20px;margin:0}
+.step ol li{margin:8px 0}
+.step ol ol{margin-top:6px;padding-left:18px;list-style:lower-alpha}
+kbd,code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em}
+code{background:var(--code);padding:2px 6px;border-radius:6px}
+.ui{display:inline-block;background:var(--code);border:1px solid var(--line);border-radius:6px;padding:0 7px;font-weight:500;font-size:.94em;color:var(--ink)}
+.callout{border-radius:12px;padding:14px 16px;margin:14px 0;font-size:15px}
+.check{background:var(--good-bg);border-left:4px solid var(--good)}
+.check b{color:var(--good)}
+.warn{background:var(--warn-bg);border-left:4px solid var(--warn)}
+.warn b{color:var(--warn)}
+.tip{background:var(--accent-soft);border-left:4px solid var(--accent)}
+.tip b{color:var(--accent-ink)}
+details{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:12px 0;background:var(--panel)}
+summary{cursor:pointer;font-weight:700;color:var(--ink)}
+details p,details li{font-size:15px;color:var(--ink2)}
+pre{background:var(--code);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:14px;line-height:1.6;margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:10px 0}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:13px}
+.timeline{display:grid;grid-template-columns:72px 1fr;gap:6px 14px;font-size:15px;margin:10px 0 0}
+.timeline b{font-variant-numeric:tabular-nums;color:var(--accent-ink)}
+footer{margin-top:60px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+a{color:var(--accent-ink)}
+</style>
+
+<main>
+<div class="eyebrow">YRC 러닝 코치 · 크루원 안내</div>
+<h1>아이폰으로 러닝 코치 연결하기</h1>
+<p class="lead">아이폰과 애플워치로 뛴 기록이 매일 아침 자동으로 코치 서버에 올라가고, 텔레그램으로 오늘의 훈련 처방과 분석 카드가 도착합니다. 처음 한 번만 아래 순서대로 설정하면 그 뒤로는 손댈 게 없습니다.</p>
+<div class="meta"><span>⏱ 소요 시간 <b>약 30분</b></span><span>💸 비용 <b>0원</b></span><span>📱 필요 기기 <b>아이폰 + 애플워치</b></span></div>
+
+<div class="need">
+<h2>시작 전에 준비할 것</h2>
+<ul>
+<li><b>애플워치</b> (SE 2세대 이상 또는 Series 6 이상). 러닝은 워치의 기본 <span class="ui">운동</span> 앱 → <span class="ui">실외 달리기</span>로 기록해 주세요. 이 데이터로 코치가 분석합니다.</li>
+<li><b>텔레그램 앱</b> (App Store에서 무료 설치). 브리핑이 여기로 옵니다.</li>
+<li><b>크루장에게 받을 것</b>: 본인 전용 <b>전송 주소</b> 한 줄. 모양은 <code>https://yrc-coach.onrender.com/ingest/본인코드</code> 입니다. 아직 못 받았다면 1단계를 먼저 하면 자동으로 옵니다.</li>
+<li>iOS 17 이상 권장. <span class="ui">단축어</span> 앱은 아이폰에 기본으로 들어 있습니다. 지웠다면 App Store에서 "단축어"를 다시 설치하세요.</li>
+</ul>
+</div>
+
+<ul class="toc">
+<li><a href="#s1"><span>1</span>텔레그램 봇 연결</a></li>
+<li><a href="#s2"><span>2</span>아이폰 설정 하나 켜기</a></li>
+<li><a href="#s3"><span>3</span>단축어 만들기 (핵심)</a></li>
+<li><a href="#s4"><span>4</span>한 번 실행해서 확인</a></li>
+<li><a href="#s5"><span>5</span>매일 자동 실행 걸기</a></li>
+<li><a href="#s6"><span>6</span>과거 기록 넣기 (선택)</a></li>
+<li><a href="#s7"><span>7</span>매일 이렇게 돌아가요</a></li>
+<li><a href="#faq"><span>?</span>막혔을 때</a></li>
+</ul>
+
+<section class="step" id="s1">
+<div class="n">1</div>
+<h2>텔레그램 봇 연결</h2>
+<p class="why">브리핑을 받을 창구를 만드는 단계입니다. 크루장이 회원 등록을 해야 하니 끝나면 꼭 알려주세요.</p>
+<ol>
+<li>텔레그램 앱을 열고 위쪽 검색창에 <code>Runnerai1030_bot</code> 을 입력합니다.</li>
+<li>검색 결과에서 <b>YRC 러닝 코치 봇</b>(@Runnerai1030_bot)을 누릅니다.</li>
+<li>화면 아래 <span class="ui">시작</span> 버튼(또는 <code>/start</code>)을 누릅니다.</li>
+<li>크루장에게 <b>"봇 시작 눌렀어요"</b> 라고 알립니다. 크루장이 이름·나이·목표를 등록하면 봇에서 <b>"연결 완료"</b> 메시지가 오고, 그 안에 본인 전용 <b>전송 주소</b>가 들어 있습니다.</li>
+</ol>
+<div class="callout check"><b>✔ 확인</b> 봇 대화창에 "YRC 러닝 코치 연결 완료!" 메시지와 <code>https://yrc-coach.onrender.com/ingest/…</code> 주소가 보이면 성공. 이 주소는 3단계에서 씁니다. 메시지를 길게 눌러 복사해 두세요.</div>
+<div class="callout warn"><b>⚠ 주의</b> 전송 주소는 본인 데이터가 저장되는 열쇠입니다. 다른 사람에게 보내지 마세요.</div>
+</section>
+
+<section class="step" id="s2">
+<div class="n">2</div>
+<h2>아이폰 설정 하나 켜기</h2>
+<p class="why">단축어가 건강 데이터를 서버로 보낼 수 있게 허용하는 설정입니다. 안 켜면 마지막에 "이 동작은 허용되지 않습니다" 오류가 납니다.</p>
+<ol>
+<li><span class="ui">설정</span> 앱을 엽니다.</li>
+<li>아래로 내려 <span class="ui">앱</span> → 목록에서 <span class="ui">단축어</span> 를 누릅니다. (iOS 17 이하는 설정 첫 화면에 바로 "단축어"가 있습니다)</li>
+<li><span class="ui">고급</span> 을 누릅니다.</li>
+<li><span class="ui">대량의 데이터 공유 허용</span> 스위치를 켭니다. 확인 창이 뜨면 <span class="ui">허용</span>.</li>
+</ol>
+<div class="callout check"><b>✔ 확인</b> 스위치가 초록색이면 됩니다. 다른 스위치는 건드리지 않아도 됩니다.</div>
+</section>
+
+<section class="step" id="s3">
+<div class="n">3</div>
+<h2>단축어 만들기 (핵심)</h2>
+<p class="why">아이폰 기본 <span class="ui">단축어</span> 앱으로 "건강 데이터를 모아서 서버로 보내기" 자동화를 만듭니다. 동작은 딱 5개이고, 한 번 만들면 끝입니다. 화면 이름 그대로 따라 하세요. 15~20분 걸립니다.</p>
+
+<div class="callout tip"><b>💡 먼저 알아두면 편한 것 3가지</b><br>
+① 동작을 추가하면 항상 <b>맨 아래</b>에 붙습니다. 순서가 틀리면 동작을 길게 눌러 끌어서 옮기면 됩니다.<br>
+② 편집 중 왼쪽 위 <span class="ui">&lt;</span> 를 누르면 자동 저장됩니다. 동작 하나 만들 때마다 한 번씩 나갔다 들어오면 날아갈 걱정이 없습니다.<br>
+③ "건강 샘플 찾기"를 추가했는데 문장이 <b>"…건강 샘플 필터링"</b> 으로 바뀌어 있으면, 파란 <span class="ui">건강 샘플</span> 토큰을 누르고 <span class="ui">변수 지우기</span> 를 누르세요. 다시 "찾기"로 돌아옵니다. (앞 동작의 결과가 자동으로 끼어들어서 생기는 현상입니다)</div>
+
+<h3 style="font-size:17px;margin:18px 0 8px">3-1. 새 단축어 열기</h3>
+<ol>
+<li><span class="ui">단축어</span> 앱 → 아래 탭 <span class="ui">나의 단축어</span> → 오른쪽 위 <span class="ui">+</span>.</li>
+<li>맨 위 제목 옆 <span class="ui">∨</span> → <span class="ui">이름 변경</span> → <code>YRC 데이터 전송</code> 으로 바꿉니다.</li>
+</ol>
+
+<h3 style="font-size:17px;margin:18px 0 8px">3-2. 동작 ① 달리기 속도 찾기</h3>
+<ol>
+<li>아래 <span class="ui">동작 검색</span> 칸에 <code>건강 샘플</code> 입력 → <span class="ui">다음 조건에 맞는 건강 샘플 찾기</span> 선택.</li>
+<li><b>유형</b> 옆 파란 값을 눌러 목록 위 검색창에 <code>달리기 속도</code> 입력 → 선택.</li>
+<li><b>시작일</b> 줄이 "다음 과거 기간 내에 있음 · 7 · 일" 처럼 있으면 숫자 <b>7을 56으로</b> 바꿉니다. 시작일 줄이 없으면 <span class="ui">필터 추가</span> → <span class="ui">시작일</span> → 조건을 <span class="ui">다음 과거 기간 내에 있음</span>, 56 일.</li>
+<li><b>단위</b>: <span class="ui">km/h</span> (KPH). <b>다음으로 그룹화</b>: <span class="ui">시간</span>.</li>
+<li>그룹화를 바꾸면 <span class="ui">파일이 유실됨</span> 이라는 스위치가 생깁니다. <b>꺼진 상태</b>로 둡니다. <b>제한</b> 스위치도 꺼진 상태.</li>
+</ol>
+
+<h3 style="font-size:17px;margin:18px 0 8px">3-3. 동작 ② 걷기+달리기 거리 찾기</h3>
+<ol>
+<li>다시 <span class="ui">동작 검색</span> → <code>건강 샘플</code> → <span class="ui">다음 조건에 맞는 건강 샘플 찾기</span>.</li>
+<li>문장이 <b>"필터링"</b> 으로 나오면 위의 팁 ③대로 <span class="ui">건강 샘플</span> 토큰 → <span class="ui">변수 지우기</span>.</li>
+<li>유형: <code>걷기 + 달리기 거리</code>. 시작일: 과거 <b>56</b>일. 단위 <span class="ui">km</span>. 그룹화 <span class="ui">시간</span>. 파일이 유실됨 끄기. 제한 끄기.</li>
+<li><span class="ui">필터 추가</span> → <span class="ui">소스 이름</span> (없으면 "소스") → 조건 <span class="ui">다음을 포함</span> → 값 칸에 <code>Watch</code> 입력.<br><span style="color:var(--muted);font-size:14px">아이폰과 워치가 같은 거리를 두 번 기록하기 때문에 워치 것만 쓰는 설정입니다. 안 넣으면 거리가 2배로 잡힙니다.</span></li>
+</ol>
+
+<h3 style="font-size:17px;margin:18px 0 8px">3-4. 동작 ③ 심박수 찾기</h3>
+<ol>
+<li><span class="ui">동작 검색</span> → <code>건강 샘플</code> → 찾기 추가. "필터링"이면 변수 지우기.</li>
+<li>유형: <code>심박수</code>. 시작일: 과거 <b>14</b>일 (심박은 양이 많아서 2주만). 단위는 그대로. <b>그룹화: 없음</b>. 제한 끄기.</li>
+<li>값 필터는 넣지 않습니다.</li>
+</ol>
+
+<h3 style="font-size:17px;margin:18px 0 8px">3-5. 동작 ④ 텍스트로 묶기</h3>
+<ol>
+<li><span class="ui">동작 검색</span> → <code>텍스트</code> → 노란 아이콘의 <span class="ui">텍스트</span> (그냥 "텍스트"라고만 써 있는 것).</li>
+<li>텍스트 칸에 아래 6줄의 제목을 그대로 타이핑합니다. 각 제목 <b>아래 줄</b>에 변수를 넣을 겁니다.
+<pre>##speed_dates
+(여기: 동작① 시작일)
+##speed_values
+(여기: 동작① 건강 샘플)
+##distance_dates
+(여기: 동작② 시작일)
+##distance_values
+(여기: 동작② 건강 샘플)
+##hr_dates
+(여기: 동작③ 시작일)
+##hr_values
+(여기: 동작③ 건강 샘플)</pre></li>
+<li>변수 넣는 법 (괄호 부분을 지우고 그 자리에):
+<ol>
+<li>커서를 그 줄에 두고 키보드 위 <span class="ui">변수 선택</span> 을 누릅니다. 위쪽 동작들이 파랗게 표시됩니다.</li>
+<li><b>values</b> 줄: 해당 "건강 샘플 찾기" 동작을 탭합니다. 파란 <span class="ui">건강 샘플</span> 토큰이 들어가면 끝.</li>
+<li><b>dates</b> 줄: 같은 동작을 탭한 뒤, 들어간 <span class="ui">건강 샘플</span> 토큰을 <b>한 번 더 누릅니다</b>. 창이 뜨면 <span class="ui">시작일</span> 을 선택하고, 같은 창의 <span class="ui">날짜 포맷</span> 을 <span class="ui">ISO 8601</span> 로 바꿉니다. (시간 포함 스위치가 있으면 켜기)</li>
+</ol></li>
+<li>6줄 모두 토큰이 들어갔는지 확인합니다. dates 줄 토큰은 "시작일", values 줄 토큰은 "건강 샘플" 이라고 보여야 합니다.</li>
+</ol>
+<div class="callout warn"><b>⚠ 흔한 실수</b> ①②③ 동작이 <b>텍스트 동작보다 위</b>에 있어야 변수 선택 목록에 나옵니다. 아래에 있으면 텍스트 동작을 길게 눌러 맨 아래로 내리세요. 토큰을 눌렀는데 "시작일"이 안 보이면 그 창의 <span class="ui">유형</span> 이 "건강 샘플"인지 확인하세요.</div>
+
+<h3 style="font-size:17px;margin:18px 0 8px">3-6. 동작 ⑤ 서버로 보내기</h3>
+<ol>
+<li><span class="ui">동작 검색</span> → <code>URL 콘텐츠</code> → <span class="ui">URL 콘텐츠 가져오기</span>.</li>
+<li>URL 칸에 1단계에서 받은 <b>본인 전송 주소</b>를 붙여넣습니다.</li>
+<li>오른쪽 화살표 <span class="ui">∨</span> 를 눌러 펼친 뒤: <b>메소드</b> <span class="ui">POST</span>, <b>본문 요청</b> <span class="ui">파일</span>, <b>파일</b> 칸을 눌러 <span class="ui">변수 선택</span> → 바로 위 <span class="ui">텍스트</span> 동작을 탭.</li>
+</ol>
+<div class="callout check"><b>✔ 확인</b> 위에서 아래로 순서가 <b>찾기 → 찾기 → 찾기 → 텍스트 → URL 콘텐츠 가져오기</b> 5개면 완성입니다. 왼쪽 위 <span class="ui">&lt;</span> 로 나가서 저장하세요.</div>
+</section>
+
+<section class="step" id="s4">
+<div class="n">4</div>
+<h2>한 번 실행해서 확인</h2>
+<ol>
+<li>단축어 편집 화면 오른쪽 아래 <span class="ui">▶︎</span> 를 누릅니다.</li>
+<li><b>건강 데이터 접근 허용</b> 창이 뜨면 오른쪽 위 <span class="ui">모두 켜기</span> → <span class="ui">허용</span>. (처음 한 번만)</li>
+<li>허용 직후 실행은 빈 결과가 나올 수 있으니 <span class="ui">▶︎</span> 를 <b>한 번 더</b> 누릅니다. 10~30초 걸립니다.</li>
+<li>오류 없이 끝나면 크루장에게 <b>"실행했어요"</b> 라고 알립니다. 크루장이 서버에서 러닝이 몇 건 들어왔는지 확인해 줍니다.</li>
+</ol>
+<div class="callout check"><b>✔ 확인</b> 크루장이 "○건 들어왔어요" 라고 하면 성공. 본인 브리핑 페이지(<code>https://yrc-coach.onrender.com/brief/본인코드</code>)를 Safari로 열어 홈 화면에 추가해 두면 언제든 볼 수 있습니다.</div>
+<details><summary>"네트워크 연결이 유실되었습니다" 라고 나와요</summary><p>서버가 잠들어 있다가 깨어나느라 첫 요청이 늦어진 겁니다. 30초 뒤 <span class="ui">▶︎</span> 를 다시 누르면 됩니다. 두 번 연속 실패하면 크루장에게 알려주세요.</p></details>
+<details><summary>"이 동작이 ○○개의 건강 항목을 공유하려고 하며 허용되지 않습니다"</summary><p>2단계 <span class="ui">대량의 데이터 공유 허용</span> 이 꺼져 있습니다. 켜고 다시 실행하세요.</p></details>
+<details><summary>실행이 몇 분째 안 끝나요</summary><p>동작 ③(심박수)의 <b>그룹화가 "시간"</b> 으로 되어 있거나, 반복문 동작이 들어가 있을 때 느려집니다. 심박수는 그룹화 <b>없음</b>, 14일로 맞추세요. 반복(각 항목에 대해 반복) 동작이 있으면 삭제합니다.</p></details>
+</section>
+
+<section class="step" id="s5">
+<div class="n">5</div>
+<h2>매일 자동 실행 걸기</h2>
+<p class="why">아침 6시 40분에 단축어가 스스로 돌아가게 합니다. 7시 브리핑보다 앞서야 그날 데이터가 반영됩니다.</p>
+<ol>
+<li><span class="ui">단축어</span> 앱 아래 탭 <span class="ui">자동화</span> → 오른쪽 위 <span class="ui">+</span>.</li>
+<li>목록에서 <span class="ui">시간대</span> 선택.</li>
+<li>시간 <b>오전 6:40</b>, 반복 <b>매일</b>.</li>
+<li>아래 실행 방식에서 <span class="ui">즉시 실행</span> 을 선택합니다. ("실행 전에 확인"이면 매일 아침 눌러줘야 하니 꼭 즉시 실행) "실행 시 알림"은 꺼도 됩니다. → <span class="ui">다음</span></li>
+<li>단축어 목록에서 <span class="ui">YRC 데이터 전송</span> 선택 → 완료.</li>
+</ol>
+<div class="callout check"><b>✔ 확인</b> 자동화 탭에 "매일 오전 6:40 · YRC 데이터 전송" 카드가 보이면 됩니다. 다음 날 아침 그 카드를 누르면 실행 기록이 보입니다.</div>
+<div class="callout tip"><b>💡</b> 아이폰이 밤새 꺼져 있거나 저전력 모드면 자동화가 건너뛸 수 있습니다. 그런 날은 단축어를 손으로 한 번 실행하면 됩니다. 같은 기록을 여러 번 보내도 서버가 알아서 합칩니다.</div>
+</section>
+
+<section class="step" id="s6">
+<div class="n">6</div>
+<h2>과거 기록 넣기 (선택)</h2>
+<p class="why">단축어는 최근 8주를 보내지만 근사치입니다. 건강 앱의 정확한 과거 기록을 한 번 넣어두면 첫날부터 정확한 페이스·심박으로 분석됩니다.</p>
+<ol>
+<li><span class="ui">건강</span> 앱 → 오른쪽 위 프로필 사진 → 맨 아래 <span class="ui">모든 건강 데이터 내보내기</span> → <span class="ui">내보내기</span>. 몇 분 걸립니다.</li>
+<li>만들어진 <code>내보내기.zip</code> 을 <b>크루장에게</b> 보냅니다 (에어드롭 또는 카카오톡 파일). 크루장이 서버에 넣어 줍니다. 파일이 커서(수십~수백 MB) 직접 올리기보다 이 방법이 확실합니다.</li>
+</ol>
+</section>
+
+<section class="step" id="s7">
+<div class="n">7</div>
+<h2>매일 이렇게 돌아가요</h2>
+<div class="timeline">
+<b>06:35</b><span>서버가 잠에서 깹니다 (크루장 쪽 예약 작업).</span>
+<b>06:40</b><span>내 아이폰의 단축어가 최근 8주 기록을 서버로 보냅니다. 아이폰은 잠금 상태여도 됩니다.</span>
+<b>07:00</b><span>서버가 분석해서 텔레그램으로 <b>카드 이미지 1장 + 브리핑 글</b>을 보냅니다.</span>
+<b>아무 때나</b><span>브리핑 페이지 <code>…/brief/본인코드</code> 에서 오늘 카드와 글을 다시 볼 수 있습니다.</span>
+</div>
+<h3 style="font-size:17px;margin:22px 0 8px">브리핑에 나오는 것</h3>
+<table>
+<tr><th>항목</th><th>뜻</th></tr>
+<tr><td>컨디션</td><td>안정심박·HRV·최근 훈련량을 보고 오늘 강하게 뛰어도 되는지 판단. "조심"이면 편하게, "휴식 권장"이면 쉬기.</td></tr>
+<tr><td>훈련량 (평소 대비 %)</td><td>지난 7일 거리 ÷ 최근 4주 평균. 100%가 평소 수준, 130% 넘으면 부상 위험이 올라가서 다음 주는 유지·감량 권장.</td></tr>
+<tr><td>오늘 훈련</td><td>종류(쉬운/템포/인터벌/장거리/휴식), 거리, 목표 페이스, 구성. 페이스는 본인 최근 기록으로 계산.</td></tr>
+<tr><td>VDOT · 예상 기록</td><td>최근 최고 러닝으로 계산한 체력 지수와 5K·10K·하프 예상 기록. 올라가면 체력이 는 것.</td></tr>
+<tr><td>강도 분포</td><td>최근 28일 러닝 중 쉬운 강도 비율. 70~80%가 이상적. 대부분 "보통" 강도면 쉬운 날을 더 느리게 뛰라는 뜻.</td></tr>
+</table>
+</section>
+
+<section class="step" id="faq">
+<div class="n">?</div>
+<h2>막혔을 때</h2>
+<details><summary>유형 목록에 "운동" 이 없어요</summary><p>정상입니다. 아이폰 단축어는 운동 기록을 직접 못 꺼내서, 대신 "달리기 속도"와 "심박수"로 서버가 러닝을 복원합니다. 안내대로 세 가지 유형만 쓰면 됩니다.</p></details>
+<details><summary>"달리기 속도" 유형이 없거나 데이터가 없어요</summary><p><span class="ui">건강</span> 앱 → 둘러보기 → 활동 → 달리기 속도 에 최근 러닝 그래프가 있는지 확인하세요. 없으면 워치가 오래된 모델이거나 러닝을 워치 운동 앱으로 기록하지 않은 경우입니다. 크루장에게 알려주세요. 그 경우 갤럭시 안내문의 "기록 올리기" 방식(건강 앱 내보내기 파일을 주기적으로 전달)으로 대신할 수 있습니다.</p></details>
+<details><summary>변수 선택을 눌렀는데 찾기 동작이 파랗게 안 떠요</summary><p>그 찾기 동작이 텍스트 동작보다 <b>아래</b>에 있어서입니다. 텍스트와 URL 동작을 길게 눌러 맨 아래로 옮기세요.</p></details>
+<details><summary>브리핑이 안 와요</summary><ul><li>텔레그램 봇 대화창을 실수로 나갔거나 차단하지 않았는지 확인 (다시 /start).</li><li>자동화 탭에서 오늘 06:40 실행 기록이 있는지 확인. 없으면 단축어를 손으로 실행.</li><li>그래도 안 오면 크루장에게 알려주세요. 서버 기록으로 어디서 끊겼는지 볼 수 있습니다.</li></ul></details>
+<details><summary>거리가 실제보다 크게 나와요</summary><p>동작 ②에 <b>소스 이름 다음을 포함 "Watch"</b> 필터가 빠진 경우입니다. 아이폰과 워치 기록이 합쳐져 2배로 잡힙니다.</p></details>
+<details><summary>단축어를 잘못 만들어서 처음부터 다시 하고 싶어요</summary><p>나의 단축어에서 카드를 길게 눌러 삭제하고 3단계부터 다시 하면 됩니다. 서버에 이미 올라간 데이터는 그대로 남습니다.</p></details>
+</section>
+
+<footer>YRC 러닝 코치 · 아이폰 크루원 안내 · 문의는 크루장에게. 데이터는 본인 전용 코드로만 저장되며 크루 내부에서만 사용합니다.</footer>
+</main>

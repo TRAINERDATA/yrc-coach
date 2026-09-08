@@ -165,6 +165,17 @@ def brief_run(token: str, send: bool = True):
     return res
 
 
+@app.post("/run-all/{admin_key}")
+def run_all_users(admin_key: str):
+    """cron-job 이 07:00 에 호출: 활성 크루원 전원에게 브리핑. ADMIN_KEY 환경변수와 일치해야 함."""
+    import os
+    key = os.getenv("ADMIN_KEY", "").strip()
+    if not key or admin_key != key:
+        raise HTTPException(403, "bad admin key")
+    results = pipeline.run_all(send=True)
+    return [{k: v for k, v in r.items() if k not in ("text", "summary")} for r in results]
+
+
 @app.post("/brief/{token}/publish")
 async def brief_publish(token: str, request: Request):
     """외부(예: Claude 구독 routine)가 써준 브리핑 본문을 받아 저장하고 전송. body: {"text": "..."}"""
