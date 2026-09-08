@@ -65,3 +65,15 @@ def test_seed_users_from_env():
     u2 = db.get_user_by_token("tok-seed-1")
     assert u2["id"] == u["id"] and u2["telegram_chat_id"] == "222" and u2["goal"] == "10k"
     os.environ.pop("SEED_USERS")
+
+
+def test_shortcut_string_units_and_dates():
+    payload = {"workouts": [
+        {"type": "달리기", "start": "2026-09-06T06:00:00+09:00", "end": "2026-09-06T06:35:00+09:00", "distance": "6.42 km"},
+        {"type": "Running", "start": "2026-09-05T06:00:00+09:00", "end": "2026-09-05T06:30:00+09:00", "distance": "5,120 m"},
+        {"type": "Running", "start": "2026-09-04T06:00:00+09:00", "end": "2026-09-04T06:30:00+09:00", "distance": 4800},
+        {"type": "Running", "start": "2026-09-03T06:00:00+09:00", "end": "2026-09-03T07:00:00+09:00", "distance": "3.1 mi"},
+    ]}
+    w, _ = ingest.parse_payload(payload)
+    assert [x["distance_km"] for x in w] == [6.42, 5.12, 4.8, 4.989]
+    assert w[0]["duration_s"] == 2100 and w[0]["start"] == "2026-09-06T06:00:00"

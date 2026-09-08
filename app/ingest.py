@@ -68,13 +68,13 @@ def _distance_km(w: dict) -> Optional[float]:
             if q is None:
                 continue
             u = _units(w[key])
-            if key == "distance_km":
-                return q
             if u in ("m", "meter", "meters"):
                 return q / 1000
             if u in ("mi", "mile", "miles"):
                 return q * 1.609344
-            return q  # km 로 가정
+            if u in ("km", "kilometer", "kilometers", "") and q > 200:
+                return q / 1000  # 단위 없이 큰 숫자면 미터로 간주
+            return q  # km
     return None
 
 
