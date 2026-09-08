@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from datetime import date
 
-from . import analysis, coach, db, notify
+from . import analysis, coach, db, notify, strava
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +15,10 @@ def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
     if existing and existing["date"] == today and not force:
         return {"user": user["name"], "skipped": True, "reason": "already briefed today"}
 
+    try:
+        strava.sync(user)
+    except Exception as e:  # noqa: BLE001
+        log.warning("strava sync failed for %s: %s", user["name"], e)
     summary = analysis.build_summary(user)
     text, generator = coach.make_briefing(user, summary)
     delivered = False

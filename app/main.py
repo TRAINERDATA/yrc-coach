@@ -97,6 +97,46 @@ async def brief_publish(token: str, request: Request):
     return {"ok": True, "delivered": delivered}
 
 
+@app.get("/strava/connect/{token}")
+def strava_connect(token: str):
+    from fastapi.responses import RedirectResponse
+    from . import strava
+    user = _user_or_404(token)
+    if not strava.enabled():
+        raise HTTPException(503, "STRAVA_CLIENT_ID / STRAVA_CLIENT_SECRET 이 설정되지 않았습니다")
+    return RedirectResponse(strava.authorize_url(user))
+
+
+@app.get("/strava/callback")
+def strava_callback(code: str = "", state: str = "", error: str = ""):
+    from . import strava
+    if error or not code:
+        return HTMLResponse(f"<h3>Strava 연결 취소됨: {html.escape(error or 'code missing')}</h3>", status_code=400)
+    user = db.get_user_by_token(state) if state else None
+    if not user:
+        raise HTTPException(400, "state(user token) missing")
+    tok = strava.exchange_code(code)
+    strava.save_tokens(user, tok)
+    user = db.get_user(user["id"])
+    try:
+        n = strava.sync(user)
+    except Exception as e:  # noqa: BLE001
+        n = f"동기화 실패: {e}"
+    seed_hint = html.escape(user["strava_refresh_token"])
+    return HTMLResponse(
+        f"<div style='font-family:sans-serif;padding:20px;line-height:1.6'><h3>✅ Strava 연결 완료</h3>"
+        f"<p>{html.escape(user['name'])}님, 최근 56일 러닝 {n}건을 가져왔습니다.</p>"
+        f"<p style='color:#666;font-size:13px'>Render 무료 플랜을 쓰면 SEED_USERS 에 아래 값을 추가해야 재시작 후에도 연결이 유지됩니다:<br>"
+        f"<code>\"strava_refresh_token\":\"{seed_hint}\"</code></p></div>")
+
+
+@app.post("/strava/sync/{token}")
+def strava_sync(token: str):
+    from . import strava
+    user = _user_or_404(token)
+    return {"ok": True, "runs": strava.sync(user)}
+
+
 @app.get("/kakao/callback")
 def kakao_callback(code: str = "", state: str = ""):
     """state 에 사용자 token 을 넣어 호출: /kakao/callback?code=...&state=<user token>"""

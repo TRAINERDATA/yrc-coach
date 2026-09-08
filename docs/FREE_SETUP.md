@@ -30,7 +30,28 @@
 2. URL: `https://<주소>/brief/<token>/run`  Method: **POST**  Schedule: 매일 07:00 (시간대 Asia/Seoul)
 3. 하나 더: URL `https://<주소>/health`, GET, 매일 06:50 → 잠든 서버를 미리 깨우는 용도
 
-## C. 단축어 만들기 (폰에서 15분, 한 번만)
+## C-0. 러닝 데이터는 Strava 로 (Apple Watch 운동 앱만 쓰는 경우 이 방법이 정답)
+
+iOS 단축어의 "건강 샘플 찾기" 는 애플 기본 기능으로 **운동(Workout) 기록을 꺼낼 수 없습니다.** 걷기+달리기 거리 같은 합계만 나옵니다. 그래서 무료로 정확한 러닝 기록을 받는 가장 좋은 방법은 Strava 입니다.
+
+1. 아이폰에 Strava 설치 → 무료 계정 → 워치에도 Strava 설치. 러닝할 때 워치에서 **Strava 앱으로** 시작합니다 (건강 앱에도 동일하게 저장됨).
+2. PC 에서 [strava.com/settings/api](https://www.strava.com/settings/api) → 앱 만들기. Authorization Callback Domain 에 `yrc-coach.onrender.com` (https:// 없이). Client ID / Client Secret 을 Render Environment 의 `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` 에 넣고 저장.
+3. 폰에서 `https://yrc-coach.onrender.com/strava/connect/<token>` 을 열고 동의. 최근 56일 러닝이 바로 들어오고, 이후 매일 아침 브리핑 직전에 자동으로 가져옵니다.
+4. Render 무료 플랜이면 연결 완료 화면에 나오는 `strava_refresh_token` 값을 `SEED_USERS` JSON 안에 추가하세요 (재시작 후에도 연결 유지). `DATABASE_URL`(아래 E) 을 쓰면 이 단계는 필요 없습니다.
+
+크루원 추가: `telegram-setup` 으로 등록 → 그 사람에게 `/strava/connect/<그 사람 token>` 링크를 보내면 끝.
+
+### 과거 기록 한 번에 넣기 (Strava 쓰기 전 기록)
+아이폰 건강 앱 → 프로필 → **모든 건강 데이터 내보내기** → zip 을 PC 로 옮긴 뒤:
+```
+python -m app.cli import-health 1 내보내기.zip --days 90
+```
+로컬 DB 에 들어갑니다. Render 서버 DB 에 넣으려면 `DATABASE_URL` 을 같은 값으로 설정한 뒤 실행하세요 (아래 E).
+
+## E. 데이터 영구 보관 (선택, 무료): Supabase Postgres
+Render 무료 플랜은 재시작 때 SQLite 가 지워집니다. [supabase.com](https://supabase.com) 무료 프로젝트를 만들고 Settings → Database → Connection string (URI, **Session pooler** 권장) 을 Render 의 `DATABASE_URL` 에 넣으면 사용자·러닝·브리핑이 모두 유지됩니다. 코드 변경 없음.
+
+## C. 단축어 만들기 (Strava 를 안 쓰는 경우의 대안. 러닝 워크아웃은 못 가져옴)
 
 단축어 앱 → `+` → 이름 "YRC 데이터 전송". 아래 동작을 순서대로 추가합니다.
 

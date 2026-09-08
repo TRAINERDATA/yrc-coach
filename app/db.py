@@ -1,4 +1,7 @@
-"""SQLite 저장소. 사용자(크루원) / 러닝 기록 / 일일 건강지표 / 브리핑 이력."""
+"""저장소. 기본은 SQLite(DB_PATH), DATABASE_URL 이 있으면 Postgres(Supabase/Neon 무료 플랜 등).
+
+테이블: users(크루원) / workouts(러닝) / daily_metrics(일일 건강지표) / briefings(브리핑 이력)
+"""
 import json
 import secrets
 import sqlite3
@@ -10,7 +13,7 @@ from . import config
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id {ID},
   name TEXT NOT NULL,
   token TEXT NOT NULL UNIQUE,
   channel TEXT NOT NULL DEFAULT 'telegram',
@@ -27,10 +30,10 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS workouts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id {ID},
   user_id INTEGER NOT NULL,
   start TEXT NOT NULL,
-  end TEXT,
+  "end" TEXT,
   duration_s REAL,
   distance_km REAL,
   avg_hr REAL,
@@ -53,7 +56,7 @@ CREATE TABLE IF NOT EXISTS daily_metrics (
   PRIMARY KEY(user_id, date)
 );
 CREATE TABLE IF NOT EXISTS briefings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id {ID},
   user_id INTEGER NOT NULL,
   date TEXT NOT NULL,
   summary TEXT NOT NULL,
@@ -65,18 +68,69 @@ CREATE TABLE IF NOT EXISTS briefings (
 );
 """
 
+# 나중에 추가된 컬럼 (기존 DB 는 init() 에서 ALTER 로 보강)
+EXTRA_USER_COLUMNS = {
+    "strava_athlete_id": "TEXT",
+    "strava_access_token": "TEXT",
+    "strava_refresh_token": "TEXT",
+    "strava_expires_at": "INTEGER",
+}
+
+USER_FIELDS = {"name", "token", "channel", "telegram_chat_id", "kakao_access_token", "kakao_refresh_token",
+               "ntfy_topic", "age", "max_hr", "goal", "weekly_days", "notes", "active", *EXTRA_USER_COLUMNS}
+
 # users 컬럼 설명
-#   token        : 폰에서 데이터를 보낼 때 / 브리핑 페이지를 볼 때 쓰는 개인 키
+#   token        : 폰/외부에서 데이터를 보낼 때, 브리핑 페이지를 볼 때 쓰는 개인 키
 #   channel      : telegram | kakao | ntfy | none
-#   goal         : 예) "11월 마라톤 서브4", "10km 50분"
+#   goal         : 예) "11월 마라톤 서브4", "5:30 페이스 1시간"
 #   weekly_days  : 주당 러닝 가능 일수
 #   notes        : 부상 이력, 선호 시간대 등 자유 메모
+
+IS_PG = bool(config.DATABASE_URL)
+
+
+class _Conn:
+    """sqlite3 / psycopg 차이를 흡수하는 얇은 래퍼. SQL 은 '?' 플레이스홀더로 쓴다."""
+
+    def __init__(self, raw):
+        self.raw = raw
+
+    def execute(self, sql: str, params=()):
+        if IS_PG:
+            sql = sql.replace("?", "%s")
+        return self.raw.execute(sql, params)
+
+    def insert_id(self, sql: str, params=()) -> int:
+        if IS_PG:
+            cur = self.raw.execute(sql.replace("?", "%s") + " RETURNING id", params)
+            return cur.fetchone()["id"]
+        return self.raw.execute(sql, params).lastrowid
+
+    def executescript(self, script: str):
+        if IS_PG:
+            for stmt in script.split(";"):
+                if stmt.strip():
+                    self.raw.execute(stmt)
+        else:
+            self.raw.executescript(script)
+
+    def commit(self):
+        self.raw.commit()
+
+    def close(self):
+        self.raw.close()
 
 
 @contextmanager
 def conn():
-    c = sqlite3.connect(config.DB_PATH)
-    c.row_factory = sqlite3.Row
+    if IS_PG:
+        import psycopg
+        from psycopg.rows import dict_row
+        raw = psycopg.connect(config.DATABASE_URL, row_factory=dict_row)
+    else:
+        raw = sqlite3.connect(config.DB_PATH)
+        raw.row_factory = sqlite3.Row
+    c = _Conn(raw)
     try:
         yield c
         c.commit()
@@ -85,8 +139,17 @@ def conn():
 
 
 def init():
+    schema = SCHEMA.replace("{ID}", "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT")
     with conn() as c:
-        c.executescript(SCHEMA)
+        c.executescript(schema)
+        for col, typ in EXTRA_USER_COLUMNS.items():
+            if IS_PG:
+                c.execute(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} {typ}")
+            else:
+                try:
+                    c.execute(f"ALTER TABLE users ADD COLUMN {col} {typ}")
+                except sqlite3.OperationalError:
+                    pass  # 이미 있음
     try:
         n = seed_users_from_env()
         if n:
@@ -104,13 +167,12 @@ def add_user(name: str, channel: str = "telegram", token: str = None, **fields) 
     vals = [name, token, channel, datetime.now().isoformat(timespec="seconds")] + list(fields.values())
     placeholders = ",".join(["?"] * len(cols))
     with conn() as c:
-        cur = c.execute(f"INSERT INTO users ({','.join(cols)}) VALUES ({placeholders})", vals)
-        new_id = cur.lastrowid
+        new_id = c.insert_id(f"INSERT INTO users ({','.join(cols)}) VALUES ({placeholders})", vals)
     return get_user(new_id)
 
 
 def upsert_user_by_token(spec: dict) -> dict:
-    """token 기준으로 있으면 갱신, 없으면 생성. (Render 무료 플랜처럼 DB가 초기화되는 환경에서 SEED_USERS 로 복구)"""
+    """token 기준으로 있으면 갱신, 없으면 생성. (DB 가 초기화되는 환경에서 SEED_USERS 로 복구)"""
     spec = {k: v for k, v in spec.items() if k in USER_FIELDS and v is not None}
     token = spec.pop("token", None)
     name = spec.pop("name", None) or "러너"
@@ -119,18 +181,16 @@ def upsert_user_by_token(spec: dict) -> dict:
         raise ValueError("token required")
     existing = get_user_by_token(token)
     if existing:
+        # 이미 DB 에 더 새로운 strava 토큰이 있으면 SEED 값으로 덮어쓰지 않음
+        if existing.get("strava_refresh_token") and "strava_refresh_token" in spec:
+            spec.pop("strava_refresh_token")
         update_user(existing["id"], name=name, channel=channel, **spec)
         return get_user(existing["id"])
     return add_user(name, channel, token=token, **spec)
 
 
-USER_FIELDS = {"name", "token", "channel", "telegram_chat_id", "kakao_access_token", "kakao_refresh_token",
-               "ntfy_topic", "age", "max_hr", "goal", "weekly_days", "notes", "active"}
-
-
 def seed_users_from_env():
     """SEED_USERS='[{"name":"...","token":"...","telegram_chat_id":"..."}]' 환경변수로 사용자 복구."""
-    import json
     import os
     raw = os.getenv("SEED_USERS", "").strip()
     if not raw:
@@ -175,13 +235,13 @@ def upsert_workouts(user_id: int, rows: Iterable[dict]) -> int:
         for w in rows:
             c.execute(
                 """INSERT INTO workouts
-                   (user_id,start,end,duration_s,distance_km,avg_hr,max_hr,energy_kcal,elev_gain_m,source,raw)
+                   (user_id,start,"end",duration_s,distance_km,avg_hr,max_hr,energy_kcal,elev_gain_m,source,raw)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(user_id,start) DO UPDATE SET
-                     end=excluded.end, duration_s=excluded.duration_s, distance_km=excluded.distance_km,
-                     avg_hr=COALESCE(excluded.avg_hr,avg_hr), max_hr=COALESCE(excluded.max_hr,max_hr),
-                     energy_kcal=COALESCE(excluded.energy_kcal,energy_kcal),
-                     elev_gain_m=COALESCE(excluded.elev_gain_m,elev_gain_m), raw=excluded.raw""",
+                     "end"=excluded."end", duration_s=excluded.duration_s, distance_km=excluded.distance_km,
+                     avg_hr=COALESCE(excluded.avg_hr,workouts.avg_hr), max_hr=COALESCE(excluded.max_hr,workouts.max_hr),
+                     energy_kcal=COALESCE(excluded.energy_kcal,workouts.energy_kcal),
+                     elev_gain_m=COALESCE(excluded.elev_gain_m,workouts.elev_gain_m), source=excluded.source, raw=excluded.raw""",
                 (
                     user_id, w["start"], w.get("end"), w.get("duration_s"), w.get("distance_km"),
                     w.get("avg_hr"), w.get("max_hr"), w.get("energy_kcal"), w.get("elev_gain_m"),
@@ -208,9 +268,9 @@ def upsert_metrics(user_id: int, rows: Iterable[dict]) -> int:
                 """INSERT INTO daily_metrics (user_id,date,resting_hr,hrv,sleep_h,steps,weight_kg,vo2max)
                    VALUES (?,?,?,?,?,?,?,?)
                    ON CONFLICT(user_id,date) DO UPDATE SET
-                     resting_hr=COALESCE(excluded.resting_hr,resting_hr), hrv=COALESCE(excluded.hrv,hrv),
-                     sleep_h=COALESCE(excluded.sleep_h,sleep_h), steps=COALESCE(excluded.steps,steps),
-                     weight_kg=COALESCE(excluded.weight_kg,weight_kg), vo2max=COALESCE(excluded.vo2max,vo2max)""",
+                     resting_hr=COALESCE(excluded.resting_hr,daily_metrics.resting_hr), hrv=COALESCE(excluded.hrv,daily_metrics.hrv),
+                     sleep_h=COALESCE(excluded.sleep_h,daily_metrics.sleep_h), steps=COALESCE(excluded.steps,daily_metrics.steps),
+                     weight_kg=COALESCE(excluded.weight_kg,daily_metrics.weight_kg), vo2max=COALESCE(excluded.vo2max,daily_metrics.vo2max)""",
                 (user_id, m["date"], m.get("resting_hr"), m.get("hrv"), m.get("sleep_h"),
                  m.get("steps"), m.get("weight_kg"), m.get("vo2max")),
             )

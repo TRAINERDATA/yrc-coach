@@ -19,3 +19,9 @@ services:
         sync: false          # 대시보드에서 입력
       - key: SEED_USERS
         sync: false          # `python -m app.cli export-seed` 출력값 (재시작 시 사용자 복구)
+      - key: STRAVA_CLIENT_ID
+        sync: false          # strava.com/settings/api
+      - key: STRAVA_CLIENT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false          # (선택) Supabase/Neon 무료 Postgres 연결 문자열. 넣으면 데이터가 재시작 후에도 유지됨

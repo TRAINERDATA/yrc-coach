@@ -37,7 +37,8 @@ def cmd_users(a):
 
 def cmd_export_seed(a):
     """Render 환경변수 SEED_USERS 에 넣을 JSON 출력 (DB 초기화 대비)."""
-    keys = ("name", "token", "channel", "telegram_chat_id", "ntfy_topic", "age", "max_hr", "goal", "weekly_days", "notes")
+    keys = ("name", "token", "channel", "telegram_chat_id", "ntfy_topic", "age", "max_hr", "goal", "weekly_days", "notes",
+            "strava_refresh_token")
     users = [{k: u[k] for k in keys if u.get(k) is not None} for u in db.list_users()]
     print(json.dumps(users, ensure_ascii=False, separators=(",", ":")))
 
@@ -110,6 +111,22 @@ def cmd_ingest(a):
     w, m = ingest.parse_payload(payload)
     print(f"파싱: 러닝 {len(w)}건, 지표 {len(m)}일")
     print(" ->", db.upsert_workouts(a.user_id, w), "workouts,", db.upsert_metrics(a.user_id, m), "metric-days 저장")
+
+
+def cmd_import_health(a):
+    """건강 앱 내보내기(zip/xml)에서 러닝·지표 가져오기."""
+    from . import health_export
+    w, m = health_export.parse(a.file, days=a.days)
+    print(f"파싱: 러닝 {len(w)}건, 지표 {len(m)}일 (최근 {a.days}일)")
+    print(" ->", db.upsert_workouts(a.user_id, w), "workouts,", db.upsert_metrics(a.user_id, m), "metric-days 저장")
+    for x in w[-5:]:
+        print(f"   {x['start'][:16]}  {x['distance_km']}km  {round(x['duration_s']/60)}분  HR {x['avg_hr'] and round(x['avg_hr'])}")
+
+
+def cmd_strava_url(a):
+    u = db.get_user(a.user_id)
+    print("폰이나 PC 브라우저에서 이 주소를 열고 Strava 에 동의하세요:")
+    print(f"{config.PUBLIC_BASE_URL}/strava/connect/{u['token']}")
 
 
 def cmd_brief(a):
@@ -185,6 +202,8 @@ def main(argv=None):
     q.add_argument("--max-hr", type=int); q.add_argument("--weekly-days", type=int); q.add_argument("--notes"); q.set_defaults(fn=cmd_telegram_setup)
     q = sp.add_parser("kakao-url"); q.add_argument("user_id", type=int); q.set_defaults(fn=cmd_kakao_url)
     q = sp.add_parser("ingest"); q.add_argument("user_id", type=int); q.add_argument("file"); q.set_defaults(fn=cmd_ingest)
+    q = sp.add_parser("import-health"); q.add_argument("user_id", type=int); q.add_argument("file"); q.add_argument("--days", type=int, default=90); q.set_defaults(fn=cmd_import_health)
+    q = sp.add_parser("strava-url"); q.add_argument("user_id", type=int); q.set_defaults(fn=cmd_strava_url)
     q = sp.add_parser("brief"); q.add_argument("user_id", type=int); q.add_argument("--no-send", action="store_true"); q.add_argument("--force", action="store_true"); q.set_defaults(fn=cmd_brief)
     q = sp.add_parser("brief-all"); q.add_argument("--no-send", action="store_true"); q.set_defaults(fn=cmd_brief_all)
     q = sp.add_parser("demo"); q.set_defaults(fn=cmd_demo)
