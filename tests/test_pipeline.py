@@ -149,3 +149,30 @@ def test_hourly_raw_hr_samples_and_dedupe():
                                   "distance_km": 5.01, "avg_hr": 172, "source": "health_export", "raw": {}}])
     rows = db.workouts_since(u["id"], 400)
     assert len(rows) == 1 and rows[0]["source"] == "health_export"
+
+
+def test_plan_goal_parsing_and_briefing():
+    from app import plan
+    g = plan.parse_goal("5:30 페이스로 1시간 연속 달리기")
+    assert g["pace_s"] == 330 and g["duration_s"] == 3600
+    g2 = plan.parse_goal("10km 50분")
+    assert g2["distance_km"] == 10 and g2["duration_s"] == 3000 and g2["pace_s"] == 300
+    g3 = plan.parse_goal("11월 하프 1:50")
+    assert g3["distance_km"] == 21.1 and g3["duration_s"] == 6600 and g3["pace_s"] == 313
+    assert plan.week_template(5)[1] == "quality" and plan.week_template(5)[5] == "long"
+    summary = {
+        "date": "2026-09-09", "weekday": "수",
+        "user": {"name": "테스트", "goal": "5:30 페이스로 1시간", "weekly_days": 5, "max_hr": 192},
+        "volume": {"last7_km": 20.1, "prev7_km": 7.8, "last28_km": 51.7, "runs_last7": 3, "runs_last28": 8, "longest_last28_km": 10.1, "acwr": 1.56, "monotony": 0.8},
+        "trend": {"avg_pace_last14": "6'36\"", "avg_pace_prev14": "7'10\"", "pace_delta_sec_per_km": -34, "hr_per_kmh_last14": 18.7, "hr_per_kmh_prev14": 20.1},
+        "recovery": {"today": {}, "baseline30d": {}, "flags": ["부하 급증 ACWR 1.56"], "readiness": "caution"},
+        "yesterday_runs": [{"date": "2026-09-08", "km": 5.01, "time_min": 30.2, "pace": "6'02\"", "avg_hr": 172, "max_hr": 188, "load": 27}],
+        "days_since_last_run": 1, "streak_days": 1,
+        "recent_runs": [{"pace": "6'02\""}, {"pace": "6'44\""}, {"pace": "6'37\""}, {"pace": "7'02\""}],
+        "data_points": {"runs_56d": 10, "metric_days_35d": 26},
+    }
+    text = coach.rule_based_briefing(summary)
+    assert "이번 주 남은 일정" in text and "목: " in text and "토: 장거리" in text
+    assert "목표 5'30\"" in text and "회복 러닝" in text
+    assert len(text) < 1200
+    print(text)

@@ -1,4 +1,4 @@
-"""아침 브리핑 생성. Claude 가 코치 역할, API 키가 없거나 실패하면 규칙 기반 브리핑으로 대체."""
+"""아침 브리핑 생성. Claude 가 코치 역할, API 키가 없거나 실패하면 규칙 기반 브리핑(plan.py)으로 대체."""
 from __future__ import annotations
 
 import json
@@ -80,50 +80,63 @@ def _claude_briefing(summary: dict, history: list) -> str:
 
 
 def rule_based_briefing(summary: dict) -> str:
-    """API 없이도 돌아가는 단순 처방."""
-    u, v, r = summary["user"], summary["volume"], summary["recovery"]
+    """API 없이도 돌아가는 처방. 목표·주당 횟수·현재 페이스·회복 상태 기반 (plan.py)."""
+    from . import plan as planner
+
+    u, v, r, t = summary["user"], summary["volume"], summary["recovery"], summary["trend"]
     name = u["name"]
     ready = {"good": "좋음", "caution": "주의", "rest": "휴식 권장"}[r["readiness"]]
     reason = ", ".join(r["flags"]) if r["flags"] else "경고 지표 없음"
     weekly = v["last7_km"]
-    few_data = summary["data_points"]["runs_56d"] < 5
+    pl = planner.build_plan(summary)
+    p = pl["paces"]
 
-    if r["readiness"] == "rest":
-        today = "휴식 또는 20~30분 가벼운 걷기. 회복 지표가 돌아오면 내일 쉬운 러닝부터."
-    elif few_data:
-        today = "쉬운 러닝 30~40분, 대화 가능한 페이스(최대심박 65~75%). 기준선 쌓는 중이라 강도는 올리지 않습니다."
-    elif r["readiness"] == "caution":
-        today = f"회복 러닝 {max(3, round(weekly * 0.12))}km, 대화 가능한 편한 페이스. 워밍업 5분 걷기, 쿨다운 스트레칭 5분."
-    else:
-        wd = summary["weekday"]
-        if wd in ("토", "일"):
-            today = f"장거리 {max(6, round(weekly * 0.3))}km, 편한 페이스로 일정하게. 마지막 1km 만 살짝 올려도 좋습니다."
-        elif wd in ("화", "목"):
-            today = "템포/인터벌: 워밍업 10분 + (1km 빠르게 + 2분 조깅)×4 + 쿨다운 10분. 빠른 구간은 '숨차지만 유지 가능한' 강도."
-        else:
-            today = f"쉬운 러닝 {max(4, round(weekly * 0.18))}km, 편한 페이스."
-
-    yest = summary["yesterday_runs"]
+    # 어제 평가
     yline = ""
+    yest = summary["yesterday_runs"]
     if yest:
         y = yest[0]
-        yline = f"\n어제: {y['km']}km {y['time_min']}분 (페이스 {y['pace']}" + (f", 평균심박 {y['avg_hr']}" if y["avg_hr"] else "") + ")"
+        yp = planner.parse_pace(y.get("pace"))
+        judge = ""
+        if yp and p.get("tempo") and yp <= p["tempo"] + 5:
+            judge = " → 강도 높은 러닝이었어요. 오늘은 회복이 우선."
+        elif yp and p.get("easy") and yp <= p["easy"] - 20:
+            judge = " → 쉬운 날치고는 빨랐어요. 편한 날은 더 느리게 뛰어도 됩니다."
+        elif yp:
+            judge = " → 편한 강도, 잘 지켰어요."
+        if y.get("avg_hr") and u.get("max_hr") and y["avg_hr"] >= u["max_hr"] * 0.9:
+            judge += f" 평균심박 {y['avg_hr']} 은 최대심박의 90% 이상이라 꽤 힘들었을 거예요."
+        hr_part = f", 평균심박 {y['avg_hr']}" if y.get("avg_hr") else ""
+        yline = f"\n어제: {y['km']}km {y['time_min']}분 (페이스 {y['pace']}{hr_part}){judge}"
 
     tips = []
+    gp = planner.goal_progress_line(summary, pl)
+    if gp:
+        tips.append(gp)
     if v["acwr"] and v["acwr"] > 1.3:
         tips.append("이번 주 볼륨이 4주 평균보다 많이 늘었어요. 다음 주는 유지 또는 10% 줄이세요.")
-    if summary["trend"]["hr_per_kmh_last14"] and summary["trend"]["hr_per_kmh_prev14"]:
-        a, b = summary["trend"]["hr_per_kmh_last14"], summary["trend"]["hr_per_kmh_prev14"]
+    if t["hr_per_kmh_last14"] and t["hr_per_kmh_prev14"]:
+        a, b = t["hr_per_kmh_last14"], t["hr_per_kmh_prev14"]
         tips.append("같은 속도에서 심박이 " + ("내려가고 있어요. 유산소 효율이 좋아지는 중입니다." if a < b else "올라갔어요. 피로 누적이나 수면을 점검하세요."))
     if v["runs_last7"] and v["longest_last28_km"] < weekly * 0.25 and weekly > 15:
         tips.append("주간 거리 대비 장거리가 짧습니다. 주 1회 장거리를 조금씩 늘려보세요.")
+    if p.get("cur") and p.get("easy"):
+        recent = [planner.parse_pace(x.get("pace")) for x in summary.get("recent_runs", [])[:6]]
+        recent = [x for x in recent if x]
+        if len(recent) >= 4 and sum(1 for x in recent if x < p["easy"] - 30) >= len(recent) * 0.75:
+            tips.append("최근 러닝 대부분이 비슷한 중간 강도예요. 쉬운 날은 확실히 느리게, 강도 날은 확실히 빠르게 나눠야 늘어요.")
     if not tips:
         tips.append("꾸준함이 최고의 훈련입니다. 이번 주도 계획한 횟수를 채우는 데 집중하세요.")
 
+    week = "\n".join(pl["week_lines"]) if pl["week_lines"] else "이번 주 남은 날 없음. 다음 주 계획은 월요일 브리핑에서."
+    tips_text = "\n".join(f"- {x}" for x in tips[:2])
     return (
-        f"🏃 {summary['date']} {name}님 아침 브리핑\n컨디션: {ready} — {reason}\n\n"
+        f"🏃 {summary['date']}({summary['weekday']}) {name}님 아침 브리핑\n"
+        f"컨디션: {ready} — {reason}\n\n"
         f"📊 지난 7일: {weekly}km / {v['runs_last7']}회 (지난주 {v['prev7_km']}km, ACWR {v['acwr'] or '-'}){yline}\n\n"
-        f"🎯 오늘 훈련\n{today}\n\n💡 보완 포인트\n" + "\n".join(f"- {t}" for t in tips[:2])
+        f"🎯 오늘 훈련\n{pl['today']}\n\n"
+        f"📅 이번 주 남은 일정\n{week}\n\n"
+        f"💡 보완 포인트\n{tips_text}"
     )
 
 
