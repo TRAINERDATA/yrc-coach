@@ -258,9 +258,31 @@ def parse_hourly(payload: dict) -> list:
     if not isinstance(h, dict):
         return []
 
+    def items(name: str) -> list:
+        """단축어가 [[...]] 로 한 겹 더 싸거나, 사전을 JSON 문자열로 보내도 풀어준다."""
+        raw = h.get(name) or []
+        if isinstance(raw, (dict, str)):
+            raw = [raw]
+        out = []
+        for x in raw:
+            if isinstance(x, list):
+                out.extend(x)
+            else:
+                out.append(x)
+        fixed = []
+        for x in out:
+            if isinstance(x, str) and x.strip().startswith("{"):
+                try:
+                    import json
+                    x = json.loads(x)
+                except ValueError:
+                    continue
+            fixed.append(x)
+        return fixed
+
     def table(name: str, conv):
         out = {}
-        for s in h.get(name) or []:
+        for s in items(name):
             if not isinstance(s, dict):
                 continue
             k = _hour_key(s.get("start") or s.get("date"))
