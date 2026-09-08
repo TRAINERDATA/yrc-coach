@@ -78,6 +78,12 @@ def paces(summary: dict, goal: dict) -> dict:
         cur = parse_pace(recent[0]["pace"]) if recent else None
     if not cur:
         return {"cur": None, "easy": None, "long": None, "tempo": None, "interval": None}
+    pz = (summary.get("fitness") or {}).get("paces_sec") or {}
+    if pz.get("E") and pz.get("T") and pz.get("I"):
+        tempo, interval = pz["T"], pz["I"]
+        if goal.get("pace_s") and goal["pace_s"] > tempo:
+            tempo = goal["pace_s"]  # 목표가 템포보다 느리면 목표 페이스로 유지 연습
+        return {"cur": cur, "easy": pz["E"], "long": round((pz["E"] + pz.get("M", pz["E"])) / 2), "tempo": tempo, "interval": interval}
     easy = cur + 45
     long_ = cur + 30
     tempo = cur - 20

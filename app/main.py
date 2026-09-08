@@ -82,6 +82,15 @@ def brief_json(token: str):
     return analysis.build_summary(user)
 
 
+@app.get("/brief/{token}/card.png")
+def brief_card(token: str):
+    from fastapi.responses import Response
+    from . import analysis, charts
+    user = _user_or_404(token)
+    png = charts.render_card(analysis.build_summary(user))
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": "no-store"})
+
+
 @app.post("/brief/{token}/run")
 def brief_run(token: str, send: bool = True):
     user = _user_or_404(token)
@@ -101,7 +110,7 @@ async def brief_publish(token: str, request: Request):
     if not text:
         raise HTTPException(400, "text missing")
     delivered = notify.deliver(user, text)
-    db.save_briefing(user["id"], date.today().isoformat(), analysis.build_summary(user), text, user.get("channel"), delivered)
+    db.save_briefing(user["id"], config.local_today().isoformat(), analysis.build_summary(user), text, user.get("channel"), delivered)
     return {"ok": True, "delivered": delivered}
 
 
@@ -166,7 +175,7 @@ PAGE = """<!doctype html><html lang=ko><head><meta charset=utf-8>
 main{max-width:520px;margin:0 auto}pre{white-space:pre-wrap;line-height:1.55;font:16px/1.55 -apple-system,system-ui,sans-serif;background:#181b22;padding:18px;border-radius:14px}
 h1{font-size:18px;color:#8fd3ff;margin:4px 0 14px}small{color:#888}.g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 .c{background:#181b22;border-radius:12px;padding:12px}.c b{display:block;font-size:22px;color:#fff}.c span{color:#999;font-size:12px}</style></head>
-<body><main><h1>🏃 YRC 러닝 코치</h1><pre>{text}</pre>
+<body><main><h1>🏃 YRC 러닝 코치</h1><img src="card.png?t={created}" alt="브리핑 카드" style="width:100%;border-radius:14px;margin-bottom:12px"><pre>{text}</pre>
 <div class=g><div class=c><b>{km7}</b><span>지난 7일 km</span></div><div class=c><b>{runs7}</b><span>지난 7일 러닝 횟수</span></div>
 <div class=c><b>{acwr}</b><span>ACWR (0.8~1.3 안전)</span></div><div class=c><b>{rhr}</b><span>안정심박 (평소 {rhr_base})</span></div></div>
 <p><small>생성 {created} · 채널 {channel} · 데이터: 러닝 {runs56}회/56일</small></p></main></body></html>"""
@@ -182,7 +191,7 @@ def brief_page(token: str):
     s = json.loads(b["summary"])
     rec = s["recovery"]
     fmt = lambda v: "-" if v is None else (f"{v:.0f}" if isinstance(v, float) else str(v))
-    return PAGE.replace("{text}", html.escape(b["text"])) \
+    return PAGE.replace("{text}", html.escape(b["text"])).replace("{created}", b["created_at"]) \
         .replace("{km7}", fmt(s["volume"]["last7_km"])).replace("{runs7}", fmt(s["volume"]["runs_last7"])) \
         .replace("{acwr}", fmt(s["volume"]["acwr"])).replace("{rhr}", fmt(rec["today"].get("resting_hr"))) \
         .replace("{rhr_base}", fmt(rec["baseline30d"].get("resting_hr"))) \

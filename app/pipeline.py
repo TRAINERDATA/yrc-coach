@@ -10,7 +10,8 @@ log = logging.getLogger(__name__)
 
 
 def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
-    today = date.today().isoformat()
+    from . import config
+    today = config.local_today().isoformat()
     existing = db.latest_briefing(user["id"])
     if existing and existing["date"] == today and not force:
         return {"user": user["name"], "skipped": True, "reason": "already briefed today"}
@@ -21,10 +22,16 @@ def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
         log.warning("strava sync failed for %s: %s", user["name"], e)
     summary = analysis.build_summary(user)
     text, generator = coach.make_briefing(user, summary)
+    png = None
+    try:
+        from . import charts
+        png = charts.render_card(summary)
+    except Exception as e:  # noqa: BLE001
+        log.warning("chart render failed for %s: %s", user["name"], e)
     delivered = False
     if send:
         try:
-            delivered = notify.deliver(user, text)
+            delivered = notify.deliver(user, text, png=png)
         except Exception as e:  # noqa: BLE001
             log.exception("delivery failed for %s: %s", user["name"], e)
     db.save_briefing(user["id"], today, summary, text, user.get("channel"), delivered)

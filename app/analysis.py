@@ -45,7 +45,8 @@ def _mean(xs):
 
 
 def build_summary(user: dict, today: date | None = None) -> dict:
-    today = today or date.today()
+    from . import config as _cfg
+    today = today or _cfg.local_today()
     max_hr = user.get("max_hr") or (220 - (user.get("age") or 35))
     runs = db.workouts_since(user["id"], 56)
     metrics = db.metrics_since(user["id"], 35)
@@ -145,7 +146,62 @@ def build_summary(user: dict, today: date | None = None) -> dict:
     else:
         readiness = "good"
 
+    # ---------- 전문 분석: VDOT, 훈련 페이스, 예상 기록, 심박 존, 주간 추세 ----------
+    from . import fitness
+    observed_max = max((w["max_hr"] for w in runs if w.get("max_hr")), default=0)
+    if observed_max and observed_max > max_hr:
+        max_hr = round(observed_max)
+
+    vd_candidates = []
+    for w in in_range(42, 0):
+        if w["distance_km"] >= 3 and w.get("duration_s"):
+            val = fitness.vdot(w["distance_km"] * 1000, w["duration_s"])
+            if val:
+                vd_candidates.append((val, w))
+    fit = {"vdot": None, "vdot_source": None, "paces": None, "predictions": None, "hr_zones": None,
+           "zone_minutes_28d": None, "max_hr": max_hr}
+    if vd_candidates:
+        best_val, best_w = max(vd_candidates, key=lambda x: x[0])
+        recent5 = sorted(vd_candidates, key=lambda x: x[1]["start"], reverse=True)[:5]
+        fit["vdot"] = best_val
+        fit["vdot_recent_avg"] = round(sum(v for v, _ in recent5) / len(recent5), 1)
+        fit["vdot_source"] = f"{best_w['start'][:10]} {best_w['distance_km']:.1f}km {pace_str(_pace(best_w))}"
+        tp = fitness.training_paces(best_val)
+        fit["paces"] = {k: pace_str(v) for k, v in tp.items()}
+        fit["paces_sec"] = tp
+        fit["predictions"] = {k: fitness.hms(v) for k, v in fitness.race_predictions(best_val).items()}
+    fit["hr_zones"] = fitness.hr_zone_bounds(max_hr)
+    zone_min = {z: 0.0 for z in range(1, 6)}
+    for w in last28:
+        z = fitness.hr_zone(w.get("avg_hr"), max_hr)
+        if z:
+            zone_min[z] += (w.get("duration_s") or 0) / 60
+    fit["zone_minutes_28d"] = {z: round(m) for z, m in zone_min.items()}
+    total_zone = sum(zone_min.values())
+    fit["easy_share_28d"] = round((zone_min[1] + zone_min[2] + zone_min[3]) / total_zone * 100) if total_zone else None
+
+    # 주간 볼륨 8주 (월~일)
+    weeks = []
+    this_monday = today - timedelta(days=today.weekday())
+    for i in range(7, -1, -1):
+        ws = this_monday - timedelta(weeks=i)
+        we = ws + timedelta(days=7)
+        wk = [w for w in runs if ws <= _day(w) < we]
+        weeks.append({"week_start": ws.isoformat(), "km": round(sum(w["distance_km"] for w in wk), 1), "runs": len(wk),
+                      "label": f"{ws.month}/{ws.day}"})
+    # 일별 ACWR 28일
+    acwr_series = []
+    for i in range(27, -1, -1):
+        d = today - timedelta(days=i)
+        acute = sum(w["distance_km"] for w in runs if d - timedelta(days=7) < _day(w) <= d)
+        chronic = sum(w["distance_km"] for w in runs if d - timedelta(days=28) < _day(w) <= d) / 4
+        acwr_series.append({"date": d.isoformat(), "acwr": round(acute / chronic, 2) if chronic >= 3 else None})
+    run_points = [{"date": w["start"][:10], "pace_s": _pace(w), "avg_hr": w.get("avg_hr"), "km": w["distance_km"]}
+                  for w in last28 if _pace(w)]
+
     return {
+        "fitness": fit,
+        "charts": {"weeks": weeks, "acwr_series": acwr_series, "runs_28d": run_points},
         "date": today.isoformat(),
         "weekday": ["월", "화", "수", "목", "금", "토", "일"][today.weekday()],
         "user": {

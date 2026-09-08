@@ -128,6 +128,27 @@ def rule_based_briefing(summary: dict) -> str:
     if not tips:
         tips.append("꾸준함이 최고의 훈련입니다. 이번 주도 계획한 횟수를 채우는 데 집중하세요.")
 
+    # 전문 분석 (VDOT · 예상 기록 · 강도 분포)
+    fit = summary.get("fitness") or {}
+    analysis_lines = []
+    if fit.get("vdot"):
+        pr = fit.get("predictions") or {}
+        analysis_lines.append(f"VDOT {fit['vdot']} (기준: {fit.get('vdot_source')})")
+        analysis_lines.append(f"예상 기록: 5K {pr.get('5K')} · 10K {pr.get('10K')} · 하프 {pr.get('하프')}")
+        pz = fit.get("paces") or {}
+        analysis_lines.append(f"훈련 페이스: 쉬운 {pz.get('E_slow')}~{pz.get('E')} · 템포 {pz.get('T')} · 인터벌 {pz.get('I')}")
+    if fit.get("easy_share_28d") is not None:
+        share = fit["easy_share_28d"]
+        zone_note = ("좋은 배분이에요." if share >= 70 else
+                     "쉬운 강도가 너무 적어요. 80/20 원칙상 러닝의 70~80%는 Z1~3(편한 대화 가능)이어야 회복되면서 늘어요.")
+        analysis_lines.append(f"최근 28일 강도 분포: 쉬운 강도(Z1~3) {share}% → {zone_note}")
+    if fit.get("max_hr"):
+        z = fit.get("hr_zones") or {}
+        z2, z4 = z.get(2) or z.get("2"), z.get(4) or z.get("4")
+        if z2 and z4:
+            analysis_lines.append(f"심박 존(최대 {fit['max_hr']}): 쉬운 Z2 {z2[0]}~{z2[1]} · 템포 Z4 {z4[0]}~{z4[1]}")
+    analysis_text = "\n".join(analysis_lines) if analysis_lines else "러닝 기록이 더 쌓이면 VDOT·예상 기록이 표시됩니다."
+
     week = "\n".join(pl["week_lines"]) if pl["week_lines"] else "이번 주 남은 날 없음. 다음 주 계획은 월요일 브리핑에서."
     tips_text = "\n".join(f"- {x}" for x in tips[:2])
     return (
@@ -136,6 +157,7 @@ def rule_based_briefing(summary: dict) -> str:
         f"📊 지난 7일: {weekly}km / {v['runs_last7']}회 (지난주 {v['prev7_km']}km, ACWR {v['acwr'] or '-'}){yline}\n\n"
         f"🎯 오늘 훈련\n{pl['today']}\n\n"
         f"📅 이번 주 남은 일정\n{week}\n\n"
+        f"📈 분석\n{analysis_text}\n\n"
         f"💡 보완 포인트\n{tips_text}"
     )
 

@@ -29,6 +29,20 @@ def send_telegram(chat_id: str, text: str) -> bool:
     return r.status_code == 200
 
 
+def send_telegram_photo(chat_id: str, png: bytes, caption: str = "") -> bool:
+    if not config.TELEGRAM_BOT_TOKEN:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN 이 설정되지 않았습니다")
+    r = requests.post(
+        f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendPhoto",
+        data={"chat_id": chat_id, "caption": caption[:1000]},
+        files={"photo": ("brief.png", png, "image/png")},
+        timeout=60,
+    )
+    if r.status_code != 200:
+        log.error("telegram photo error %s %s", r.status_code, r.text[:300])
+    return r.status_code == 200
+
+
 def telegram_updates() -> list:
     """봇에게 말을 건 사람들의 chat_id 를 찾을 때 사용 (CLI: telegram-chats)."""
     r = requests.get(f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/getUpdates", timeout=20)
@@ -102,9 +116,14 @@ def send_ntfy(topic: str, text: str, user: dict) -> bool:
 
 
 # ---------- dispatcher ----------
-def deliver(user: dict, text: str) -> bool:
+def deliver(user: dict, text: str, png: bytes | None = None) -> bool:
     ch = user.get("channel") or "none"
     if ch == "telegram" and user.get("telegram_chat_id"):
+        if png:
+            try:
+                send_telegram_photo(user["telegram_chat_id"], png, caption=text.split("\n", 1)[0])
+            except Exception as e:  # noqa: BLE001
+                log.warning("photo send failed: %s", e)
         return send_telegram(user["telegram_chat_id"], text)
     if ch == "kakao" and user.get("kakao_access_token"):
         return send_kakao(user, text)

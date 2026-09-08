@@ -36,3 +36,16 @@ COACH_EFFORT = os.getenv("COACH_EFFORT", "medium")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
 Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
+
+ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+
+
+def local_today():
+    """서버가 어느 시간대에 있든 한국 날짜 기준."""
+    from datetime import datetime
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo(TZ)).date()
+    except Exception:  # noqa: BLE001
+        from datetime import timedelta, timezone
+        return datetime.now(timezone(timedelta(hours=9))).date()
