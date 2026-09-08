@@ -33,7 +33,12 @@ def _num(v: Any) -> Optional[float]:
 
 
 def _units(v: Any) -> str:
-    return str(v.get("units") or "").lower() if isinstance(v, dict) else ""
+    if isinstance(v, dict):
+        return str(v.get("units") or "").lower()
+    if isinstance(v, str):  # 단축어가 보내는 "6.42 km", "6,420 m", "3.9 mi" 형태
+        m = re.search(r"[a-zA-Z]+\s*$", v.strip())
+        return m.group().strip().lower() if m else ""
+    return ""
 
 
 def parse_dt(s: Any) -> Optional[datetime]:
