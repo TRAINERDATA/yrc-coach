@@ -331,7 +331,8 @@ def parse_hourly(payload: dict) -> list:
 
     speed = table("speed", _speed_kmh)
     dist = table("distance", lambda v: _num(v) / 1000 if _units(v) in ("m", "meters") else _num(v))
-    hr = table("hr", _num)
+    # 단축어의 시간별 그룹 심박은 '합계'로 오는 경우가 있어(수만 단위) 250 초과는 평균으로 쓰지 않는다
+    hr = {k: v for k, v in table("hr", _num).items() if 30 <= v <= 250}
 
     run_hours = sorted(k for k, v in speed.items() if v >= 5.5)
     runs, block = [], []
