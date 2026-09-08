@@ -16,6 +16,19 @@ from typing import Any, Optional
 
 RUN_NAMES = ("running", "run", "달리기", "러닝", "treadmill")
 
+try:
+    from zoneinfo import ZoneInfo
+    from . import config as _config
+    LOCAL_TZ = ZoneInfo(_config.TZ)
+except Exception:  # noqa: BLE001  (tzdata 없는 환경)
+    from datetime import timezone as _tz
+    LOCAL_TZ = _tz(timedelta(hours=9), "KST")
+
+
+def _to_local(d: datetime) -> datetime:
+    """시간대가 붙은 datetime 을 한국 시각(naive)으로. 없는 건 그대로."""
+    return d if d.tzinfo is None else d.astimezone(LOCAL_TZ).replace(tzinfo=None)
+
 
 def _num(v: Any) -> Optional[float]:
     if v is None:
@@ -51,12 +64,12 @@ def parse_dt(s: Any) -> Optional[datetime]:
     for fmt in ("%Y-%m-%d %H:%M:%S %z", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S"):
         try:
             d = datetime.strptime(s, fmt)
-            return d if d.tzinfo is None else d.astimezone().replace(tzinfo=None)
+            return _to_local(d)
         except ValueError:
             continue
     try:
         d = datetime.fromisoformat(s.replace("Z", "+00:00"))
-        return d if d.tzinfo is None else d.astimezone().replace(tzinfo=None)
+        return _to_local(d)
     except ValueError:
         pass
     # 한국식: "2026. 9. 7. 오전 6:00", "2026년 9월 7일 오후 3:05:10", "9/7/26, 6:00 AM"
