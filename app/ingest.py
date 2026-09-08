@@ -16,6 +16,7 @@ from typing import Any, Optional
 
 RUN_NAMES = ("running", "run", "달리기", "러닝", "treadmill")
 HR_SAMPLE_INTERVAL_S = 4.5  # 애플워치 운동 중 심박 기록 간격 (실측: 4.0~5.1초)
+HR_RUN_MIN_BPM = 100  # 이 값 이상 샘플만 러닝 구간으로 계산 (실측 비교에서 오차 최소)
 
 try:
     from zoneinfo import ZoneInfo
@@ -339,7 +340,7 @@ def parse_hourly(payload: dict) -> list:
     # 심박: 원본 샘플(시간대당 여러 개, 값 100~220)이면 정확 모드. 시간별 그룹(합계, 수만 단위)이면 무시.
     hr_samples: dict = {}
     for k, v in pairs("hr", _num):
-        if 30 <= v <= 250:
+        if HR_RUN_MIN_BPM <= v <= 250:  # 러닝 중 심박만 (걷기/휴식 샘플 제외)
             hr_samples.setdefault(k, []).append(v)
     hr_raw_mode = any(len(v) >= 3 for v in hr_samples.values())
     hr = {} if hr_raw_mode else {k: v[0] for k, v in hr_samples.items() if len(v) == 1}
