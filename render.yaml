@@ -1,0 +1,21 @@
+# Render 무료 플랜 배포 설정. 대시보드에서 New → Blueprint 로 이 저장소를 고르면 자동 적용됩니다.
+services:
+  - type: web
+    name: yrc-coach
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: COACH_PROVIDER
+        value: rules
+      - key: DB_PATH
+        value: ./data/yrc.db
+      - key: TZ
+        value: Asia/Seoul
+      - key: PUBLIC_BASE_URL
+        sync: false          # 대시보드에서 https://yrc-coach.onrender.com 형태로 입력
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false          # 대시보드에서 입력
+      - key: SEED_USERS
+        sync: false          # `python -m app.cli export-seed` 출력값 (재시작 시 사용자 복구)

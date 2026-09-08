@@ -1,0 +1,38 @@
+"""하루 한 번 도는 파이프라인: 분석 → 브리핑 생성 → 전송 → 저장."""
+from __future__ import annotations
+
+import logging
+from datetime import date
+
+from . import analysis, coach, db, notify
+
+log = logging.getLogger(__name__)
+
+
+def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
+    today = date.today().isoformat()
+    existing = db.latest_briefing(user["id"])
+    if existing and existing["date"] == today and not force:
+        return {"user": user["name"], "skipped": True, "reason": "already briefed today"}
+
+    summary = analysis.build_summary(user)
+    text, generator = coach.make_briefing(user, summary)
+    delivered = False
+    if send:
+        try:
+            delivered = notify.deliver(user, text)
+        except Exception as e:  # noqa: BLE001
+            log.exception("delivery failed for %s: %s", user["name"], e)
+    db.save_briefing(user["id"], today, summary, text, user.get("channel"), delivered)
+    return {"user": user["name"], "generator": generator, "delivered": delivered, "text": text, "summary": summary}
+
+
+def run_all(send: bool = True) -> list:
+    results = []
+    for u in db.list_users():
+        try:
+            results.append(run_for_user(u, send=send))
+        except Exception as e:  # noqa: BLE001
+            log.exception("briefing failed for %s", u["name"])
+            results.append({"user": u["name"], "error": str(e)})
+    return results

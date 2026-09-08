@@ -1,0 +1,33 @@
+{
+  "data": {
+    "metrics": [
+      {"name": "resting_heart_rate", "units": "count/min", "data": [{"date": "2026-09-07 00:00:00 +0900", "qty": 53}]},
+      {"name": "heart_rate_variability", "units": "ms", "data": [{"date": "2026-09-07 06:10:00 +0900", "qty": 58.2}]},
+      {"name": "sleep_analysis", "units": "hr", "data": [{"date": "2026-09-07 07:00:00 +0900", "asleep": 6.8, "inBed": 7.4, "deep": 1.1, "rem": 1.5, "core": 4.2}]},
+      {"name": "step_count", "units": "count", "data": [{"date": "2026-09-07 08:00:00 +0900", "qty": 1204}, {"date": "2026-09-07 09:00:00 +0900", "qty": 3410}]}
+    ],
+    "workouts": [
+      {
+        "name": "Running",
+        "start": "2026-09-07 06:31:12 +0900",
+        "end": "2026-09-07 07:08:40 +0900",
+        "duration": 2248.0,
+        "distance": {"qty": 6.42, "units": "km"},
+        "activeEnergyBurned": {"qty": 412, "units": "kcal"},
+        "elevationUp": {"qty": 38, "units": "m"},
+        "intensity": {"qty": 9.1, "units": "MET"},
+        "heartRateData": [
+          {"date": "2026-09-07 06:32:00 +0900", "Min": 112, "Max": 138, "Avg": 128},
+          {"date": "2026-09-07 06:45:00 +0900", "Min": 145, "Max": 158, "Avg": 152},
+          {"date": "2026-09-07 07:00:00 +0900", "Min": 150, "Max": 166, "Avg": 157}
+        ]
+      },
+      {
+        "name": "Walking",
+        "start": "2026-09-07 12:00:00 +0900",
+        "end": "2026-09-07 12:20:00 +0900",
+        "distance": {"qty": 1.4, "units": "km"}
+      }
+    ]
+  }
+}
