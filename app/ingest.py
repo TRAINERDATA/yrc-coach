@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Optional
 
 RUN_NAMES = ("running", "run", "달리기", "러닝", "treadmill")
@@ -200,5 +200,91 @@ def parse_metrics(payload: dict) -> list:
     return list(by_date.values())
 
 
+def _speed_kmh(v: Any) -> Optional[float]:
+    """'10.6 km/h', '2.9 m/s', '5:40 /km' 같은 표기를 km/h 로."""
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    s = str(v).strip().lower()
+    m = re.match(r"(\d+):(\d{1,2})", s)  # 분:초 /km 페이스
+    if m and ("/km" in s or "min" in s):
+        sec = int(m.group(1)) * 60 + int(m.group(2))
+        return 3600 / sec if sec else None
+    q = _num(s)
+    if q is None:
+        return None
+    if "m/s" in s:
+        return q * 3.6
+    if "min/km" in s or "/km" in s:
+        return 60 / q if q else None
+    if "mph" in s or "mi/h" in s:
+        return q * 1.609344
+    return q
+
+
+def _hour_key(s: Any) -> Optional[str]:
+    d = parse_dt(s)
+    return d.strftime("%Y-%m-%dT%H:00:00") if d else None
+
+
+def parse_hourly(payload: dict) -> list:
+    """단축어가 보내는 '시간별 그룹' 샘플로 러닝을 복원한다 (iOS 단축어는 운동 기록을 직접 못 꺼내므로).
+
+    {"hourly": {"speed": [{"start": "...", "value": "10.6 km/h"}], "distance": [{"start","value":"6.4 km"}],
+                "hr": [{"start","value":"148 count/min"}]}}
+    - 달리기 속도 샘플은 애플워치 러닝 워크아웃 중에만 기록되므로 그 시간대 = 러닝.
+    - 연속된 시간대는 한 번의 러닝으로 합치고, 거리는 그 시간대 걷기+달리기 거리 합, 시간은 거리/속도로 추정.
+    """
+    h = payload.get("hourly")
+    if not isinstance(h, dict):
+        return []
+
+    def table(name: str, conv):
+        out = {}
+        for s in h.get(name) or []:
+            if not isinstance(s, dict):
+                continue
+            k = _hour_key(s.get("start") or s.get("date"))
+            v = conv(s.get("value") if "value" in s else s.get("qty"))
+            if k and v is not None:
+                out[k] = v
+        return out
+
+    speed = table("speed", _speed_kmh)
+    dist = table("distance", lambda v: _num(v) / 1000 if _units(v) in ("m", "meters") else _num(v))
+    hr = table("hr", _num)
+
+    run_hours = sorted(k for k, v in speed.items() if v >= 5.5)
+    runs, block = [], []
+    for k in run_hours:
+        if block and (parse_dt(k) - parse_dt(block[-1])).total_seconds() > 3600:
+            runs.append(block)
+            block = []
+        block.append(k)
+    if block:
+        runs.append(block)
+
+    out = []
+    for hours in runs:
+        d_km = sum(dist.get(k, 0) for k in hours)
+        v = sum(speed[k] for k in hours) / len(hours)
+        if d_km < 1.0 or not v:
+            continue
+        dur = d_km / v * 3600
+        hrs = [hr[k] for k in hours if hr.get(k)]
+        start = parse_dt(hours[0])
+        out.append({
+            "start": start.isoformat(timespec="seconds"),
+            "end": (start + timedelta(seconds=dur)).isoformat(timespec="seconds"),
+            "duration_s": round(dur), "distance_km": round(d_km, 3),
+            "avg_hr": round(sum(hrs) / len(hrs), 1) if hrs else None, "max_hr": None,
+            "energy_kcal": None, "elev_gain_m": None, "source": "shortcut_hourly",
+            "raw": {"hours": hours, "speed_kmh": round(v, 2), "note": "시간별 샘플로 복원한 근사치"},
+        })
+    return out
+
+
 def parse_payload(payload: dict):
-    return parse_workouts(payload), parse_metrics(payload)
+    workouts = parse_workouts(payload) + parse_hourly(payload)
+    return workouts, parse_metrics(payload)

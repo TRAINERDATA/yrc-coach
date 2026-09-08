@@ -63,8 +63,17 @@ async def ingest_data(token: str, request: Request):
     workouts, metrics = ingest.parse_payload(payload)
     nw = db.upsert_workouts(user["id"], workouts)
     nm = db.upsert_metrics(user["id"], metrics)
+    db.save_raw_payload(user["id"], payload)  # 단축어 디버깅용 (마지막 1건만 보관)
     log.info("ingest %s: %d workouts, %d metric-days", user["name"], nw, nm)
-    return {"ok": True, "workouts": nw, "metric_days": nm}
+    return {"ok": True, "workouts": nw, "metric_days": nm,
+            "runs": [{"start": w["start"], "km": w["distance_km"]} for w in workouts[-5:]]}
+
+
+@app.get("/ingest/{token}/last")
+def ingest_last(token: str):
+    """마지막으로 받은 원본 데이터 (단축어가 뭘 보냈는지 확인용)."""
+    user = _user_or_404(token)
+    return db.last_raw_payload(user["id"]) or {"note": "아직 받은 데이터 없음"}
 
 
 @app.get("/brief/{token}/json")

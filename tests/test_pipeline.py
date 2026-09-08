@@ -77,3 +77,25 @@ def test_shortcut_string_units_and_dates():
     w, _ = ingest.parse_payload(payload)
     assert [x["distance_km"] for x in w] == [6.42, 5.12, 4.8, 4.989]
     assert w[0]["duration_s"] == 2100 and w[0]["start"] == "2026-09-06T06:00:00"
+
+
+def test_hourly_reconstruction():
+    payload = {"hourly": {
+        "speed": [{"start": "2026-09-07T06:00:00+09:00", "value": "10.4 km/h"},
+                  {"start": "2026-09-07T07:00:00+09:00", "value": "10.8 km/h"},
+                  {"start": "2026-09-05T19:00:00+09:00", "value": "2.9 m/s"}],
+        "distance": [{"start": "2026-09-07T06:00:00+09:00", "value": "4.1 km"},
+                     {"start": "2026-09-07T07:00:00+09:00", "value": "2.5 km"},
+                     {"start": "2026-09-07T12:00:00+09:00", "value": "1.2 km"},
+                     {"start": "2026-09-05T19:00:00+09:00", "value": "5200 m"}],
+        "hr": [{"start": "2026-09-07T06:00:00+09:00", "value": "150 count/min"},
+               {"start": "2026-09-07T07:00:00+09:00", "value": "156 count/min"}],
+    }}
+    w, _ = ingest.parse_payload(payload)
+    assert len(w) == 2
+    a, b = sorted(w, key=lambda x: x["start"])
+    assert a["start"] == "2026-09-05T19:00:00" and a["distance_km"] == 5.2 and a["avg_hr"] is None
+    assert b["start"] == "2026-09-07T06:00:00" and b["distance_km"] == 6.6 and b["avg_hr"] == 153
+    assert 2150 < b["duration_s"] < 2300 and b["source"] == "shortcut_hourly"
+    # 정오의 걷기(속도 샘플 없음)는 러닝으로 잡히지 않음
+    assert all(x["start"][11:13] != "12" for x in w)

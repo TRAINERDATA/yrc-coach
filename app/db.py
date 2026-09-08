@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS daily_metrics (
   vo2max REAL,
   PRIMARY KEY(user_id, date)
 );
+CREATE TABLE IF NOT EXISTS raw_payloads (
+  user_id INTEGER PRIMARY KEY,
+  received_at TEXT NOT NULL,
+  body TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS briefings (
   id {ID},
   user_id INTEGER NOT NULL,
@@ -283,6 +288,29 @@ def metrics_since(user_id: int, days: int) -> list:
     with conn() as c:
         return [dict(r) for r in c.execute(
             "SELECT * FROM daily_metrics WHERE user_id=? AND date>=? ORDER BY date", (user_id, since))]
+
+
+# ---------- raw payloads (debug) ----------
+def save_raw_payload(user_id: int, payload: dict):
+    body = json.dumps(payload, ensure_ascii=False)[:200000]
+    with conn() as c:
+        c.execute(
+            """INSERT INTO raw_payloads (user_id, received_at, body) VALUES (?,?,?)
+               ON CONFLICT(user_id) DO UPDATE SET received_at=excluded.received_at, body=excluded.body""",
+            (user_id, datetime.now().isoformat(timespec="seconds"), body),
+        )
+
+
+def last_raw_payload(user_id: int):
+    with conn() as c:
+        r = c.execute("SELECT received_at, body FROM raw_payloads WHERE user_id=?", (user_id,)).fetchone()
+        if not r:
+            return None
+        try:
+            body = json.loads(r["body"])
+        except ValueError:
+            body = r["body"]
+        return {"received_at": r["received_at"], "payload": body}
 
 
 # ---------- briefings ----------
