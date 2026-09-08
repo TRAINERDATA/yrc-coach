@@ -87,7 +87,11 @@ def parse(path: str, days: int = 90):
                     if start >= since:
                         if col:
                             day = start.strftime("%Y-%m-%d")
-                            metrics.setdefault(day, {"date": day})[col] = float(el.get("value"))
+                            m = metrics.setdefault(day, {"date": day})
+                            # 하루에 여러 번 측정되는 값(HRV 등)은 평균
+                            cnt = m.setdefault("_n", {}).get(col, 0)
+                            m[col] = (m.get(col, 0) * cnt + float(el.get("value"))) / (cnt + 1)
+                            m["_n"][col] = cnt + 1
                         elif "Asleep" in (el.get("value") or ""):
                             end = _dt(el.get("endDate"))
                             day = end.strftime("%Y-%m-%d")  # 기상일 기준
@@ -97,4 +101,8 @@ def parse(path: str, days: int = 90):
                 el.clear()
     for day, h in sleep_by_day.items():
         metrics.setdefault(day, {"date": day})["sleep_h"] = round(h, 2)
-    return workouts, list(metrics.values())
+    out = []
+    for m in metrics.values():
+        m.pop("_n", None)
+        out.append({k: (round(v, 2) if isinstance(v, float) else v) for k, v in m.items()})
+    return workouts, out

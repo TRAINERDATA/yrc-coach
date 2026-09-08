@@ -122,21 +122,28 @@ def build_summary(user: dict, today: date | None = None) -> dict:
         "hrv": _mean([m.get("hrv") for m in base]),
         "sleep_h": _mean([m.get("sleep_h") for m in base]),
     }
-    flags = []
+    body_flags, load_flags = [], []  # 몸 상태 경고 / 훈련 부하 경고
     if today_m.get("resting_hr") and baseline["resting_hr"] and today_m["resting_hr"] > baseline["resting_hr"] * 1.05:
-        flags.append(f"안정심박 상승 ({today_m['resting_hr']:.0f} vs 평소 {baseline['resting_hr']:.0f})")
-    if today_m.get("hrv") and baseline["hrv"] and today_m["hrv"] < baseline["hrv"] * 0.85:
-        flags.append(f"HRV 저하 ({today_m['hrv']:.0f} vs 평소 {baseline['hrv']:.0f})")
+        body_flags.append(f"안정심박 상승 ({today_m['resting_hr']:.0f} vs 평소 {baseline['resting_hr']:.0f})")
+    if today_m.get("hrv") and baseline["hrv"] and today_m["hrv"] < baseline["hrv"] * 0.75:
+        body_flags.append(f"HRV 저하 ({today_m['hrv']:.0f} vs 평소 {baseline['hrv']:.0f})")
     if today_m.get("sleep_h") and today_m["sleep_h"] < 6:
-        flags.append(f"수면 부족 ({today_m['sleep_h']:.1f}h)")
+        body_flags.append(f"수면 부족 ({today_m['sleep_h']:.1f}h)")
     if acwr and acwr > 1.4:
-        flags.append(f"부하 급증 ACWR {acwr}")
+        load_flags.append(f"부하 급증 ACWR {acwr}")
     if streak >= 5:
-        flags.append(f"{streak}일 연속 러닝")
+        load_flags.append(f"{streak}일 연속 러닝")
     if km_prev7 and km7 > km_prev7 * 1.25 and km7 - km_prev7 > 5:
-        flags.append(f"주간 거리 {round((km7 / km_prev7 - 1) * 100)}% 증가")
+        load_flags.append(f"주간 거리 {round((km7 / km_prev7 - 1) * 100)}% 증가")
+    flags = body_flags + load_flags
 
-    readiness = "good" if not flags else ("caution" if len(flags) == 1 else "rest")
+    # 몸 상태 경고가 2개 이상이거나, 몸 상태 + 부하 경고가 같이 있으면 휴식. 그 외 경고가 있으면 주의.
+    if len(body_flags) >= 2 or (body_flags and load_flags):
+        readiness = "rest"
+    elif flags:
+        readiness = "caution"
+    else:
+        readiness = "good"
 
     return {
         "date": today.isoformat(),
