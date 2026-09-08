@@ -382,14 +382,15 @@ def parse_hourly(payload: dict) -> list:
         if d_km < 1.0:
             continue
         # 케이던스(분당 걸음): 속도(m/min) ÷ 보폭(m). 보폭이 없으면 시간대 걸음 수 ÷ 러닝 시간
+        # 걸음 수(워치) ÷ 러닝 시간이 애플 피트니스 앱의 케이던스와 같은 방식이라 우선. 보폭은 걷기 샘플이 섞여 부정확 → 보조
         cadence = None
-        strides = [stride[k] for k in hours if stride.get(k) and 0.4 <= stride[k] <= 2.5]
-        if strides:
-            cadence = round(v * 1000 / 60 / (sum(strides) / len(strides)))
+        st = sum(steps.get(k, 0) for k in hours)
+        if st and dur:
+            cadence = round(st / (dur / 60))
         else:
-            st = sum(steps.get(k, 0) for k in hours)
-            if st and dur:
-                cadence = round(st / (dur / 60))
+            strides = [stride[k] for k in hours if stride.get(k) and 0.8 <= stride[k] <= 1.6]
+            if strides:
+                cadence = round(v * 1000 / 60 / (sum(strides) / len(strides)))
         if cadence and not 120 <= cadence <= 220:
             cadence = None
         start = parse_dt(hours[0])
