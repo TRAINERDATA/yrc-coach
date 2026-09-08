@@ -99,3 +99,30 @@ def test_hourly_reconstruction():
     assert 2150 < b["duration_s"] < 2300 and b["source"] == "shortcut_hourly"
     # 정오의 걷기(속도 샘플 없음)는 러닝으로 잡히지 않음
     assert all(x["start"][11:13] != "12" for x in w)
+
+
+def test_text_section_body():
+    body = """##speed_dates
+2026-09-08T20:05:49+09:00
+2026-09-06T07:30:54+09:00
+##speed_values
+10.06 km/h
+9.86 km/h
+##distance_dates
+2026-09-08T20:00:00+09:00
+2026-09-06T07:00:00+09:00
+2026-09-08T12:00:00+09:00
+##distance_values
+6.5 km
+7.1 km
+2 km
+##hr_dates
+2026-09-08T20:00:00+09:00
+##hr_values
+155 회/분
+""".encode("utf-8")
+    payload = ingest.parse_body(body)
+    assert set(payload["hourly"]) == {"speed_dates", "speed_values", "distance_dates", "distance_values", "hr_dates", "hr_values"}
+    w, _ = ingest.parse_payload(payload)
+    assert len(w) == 2 and {x["distance_km"] for x in w} == {6.5, 7.1}
+    assert ingest.parse_body(b'{"hourly": {}}') == {"hourly": {}}

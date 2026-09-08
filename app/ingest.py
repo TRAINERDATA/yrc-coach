@@ -350,6 +350,37 @@ def parse_hourly(payload: dict) -> list:
     return out
 
 
+def parse_body(body: bytes):
+    """요청 본문이 JSON 이면 그대로, 아니면 '##이름' 구역으로 나뉜 텍스트를 hourly 사전으로 변환.
+
+    ##speed_dates
+    2026-09-08T20:05:49+09:00
+    ##speed_values
+    10.06 km/h
+    ...
+    """
+    import json
+    text = body.decode("utf-8", errors="replace").lstrip("﻿").strip()
+    if not text:
+        return {}
+    if text[0] in "{[":
+        try:
+            return json.loads(text)
+        except ValueError:
+            pass
+    sections, current = {}, None
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("##"):
+            current = s[2:].strip().lower()
+            sections[current] = []
+        elif current and s:
+            sections[current].append(s)
+    if not sections:
+        return {}
+    return {"hourly": {k: "\n".join(v) for k, v in sections.items()}}
+
+
 def hourly_counts(payload: dict) -> dict:
     """디버깅용: 시간별 샘플이 종류별로 몇 시간대 들어왔는지."""
     h = payload.get("hourly")

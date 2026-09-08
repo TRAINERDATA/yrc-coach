@@ -54,12 +54,10 @@ def health():
 @app.post("/ingest/{token}")
 async def ingest_data(token: str, request: Request):
     user = _user_or_404(token)
-    try:
-        payload = await request.json()
-    except Exception:
-        raise HTTPException(400, "body must be JSON")
+    body = await request.body()
+    payload = ingest.parse_body(body)
     if not isinstance(payload, dict):
-        raise HTTPException(400, "JSON object expected")
+        raise HTTPException(400, "JSON object or ##section text expected")
     workouts, metrics = ingest.parse_payload(payload)
     nw = db.upsert_workouts(user["id"], workouts)
     nm = db.upsert_metrics(user["id"], metrics)
