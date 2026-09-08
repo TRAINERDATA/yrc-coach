@@ -60,11 +60,14 @@ def parse_dt(s: Any) -> Optional[datetime]:
     except ValueError:
         pass
     # 한국식: "2026. 9. 7. 오전 6:00", "2026년 9월 7일 오후 3:05:10", "9/7/26, 6:00 AM"
-    m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})\D*(?:(오전|오후|AM|PM)\s*)?(?:(\d{1,2}):(\d{2})(?::(\d{2}))?)?\s*(오전|오후|AM|PM)?", s)
+    m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s)
     if m:
         y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
-        hh, mm, ss = int(m.group(5) or 0), int(m.group(6) or 0), int(m.group(7) or 0)
-        ampm = (m.group(4) or m.group(8) or "").upper()
+        rest = s[m.end():]
+        t = re.search(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", rest)
+        hh, mm, ss = (int(t.group(1)), int(t.group(2)), int(t.group(3) or 0)) if t else (0, 0, 0)
+        a = re.search(r"오전|오후|AM|PM", rest, re.I)
+        ampm = a.group().upper() if a else ""
         if ampm in ("오후", "PM") and hh < 12:
             hh += 12
         if ampm in ("오전", "AM") and hh == 12:
