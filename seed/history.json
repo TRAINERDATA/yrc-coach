@@ -1,0 +1,814 @@
+{
+"xlrAjA7X0A_OPm2OBakS8tof": {
+"workouts": [
+{
+"start": "2026-05-12T20:08:44",
+"end": "2026-05-12T20:24:48",
+"duration_s": 964.2630739212036,
+"distance_km": 2.501,
+"avg_hr": 174.763,
+"max_hr": 188.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-12T20:26:49",
+"end": "2026-05-12T20:57:09",
+"duration_s": 1819.6194561719892,
+"distance_km": 2.731,
+"avg_hr": 147.779,
+"max_hr": 189.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-15T17:47:47",
+"end": "2026-05-15T18:07:05",
+"duration_s": 1157.6411919593813,
+"distance_km": 1.967,
+"avg_hr": 131.946,
+"max_hr": 172.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-15T17:44:12",
+"end": "2026-05-15T18:07:11",
+"duration_s": 1375.8559999465942,
+"distance_km": 2.506,
+"avg_hr": null,
+"max_hr": null,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "Nike Run Club"
+}
+},
+{
+"start": "2026-05-18T20:03:17",
+"end": "2026-05-18T20:47:12",
+"duration_s": 2625.3507080078125,
+"distance_km": 7.026,
+"avg_hr": 171.351,
+"max_hr": 191.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-19T20:00:56",
+"end": "2026-05-19T20:35:14",
+"duration_s": 1994.1090769767761,
+"distance_km": 5.532,
+"avg_hr": 179.708,
+"max_hr": 191.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-21T20:01:42",
+"end": "2026-05-21T20:33:06",
+"duration_s": 1883.7651079893114,
+"distance_km": 5.095,
+"avg_hr": 163.763,
+"max_hr": 176.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-26T19:38:20",
+"end": "2026-05-26T19:47:23",
+"duration_s": 542.6969590187073,
+"distance_km": 1.528,
+"avg_hr": 161.464,
+"max_hr": 183.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-26T19:51:07",
+"end": "2026-05-26T19:57:12",
+"duration_s": 364.76078701019287,
+"distance_km": 1.05,
+"avg_hr": 185.551,
+"max_hr": 191.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-05-28T20:02:15",
+"end": "2026-05-28T20:38:58",
+"duration_s": 2202.5415320396423,
+"distance_km": 6.147,
+"avg_hr": 170.901,
+"max_hr": 188.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-06-01T20:01:30",
+"end": "2026-06-01T20:34:50",
+"duration_s": 1999.6249940395357,
+"distance_km": 5.146,
+"avg_hr": 159.425,
+"max_hr": 179.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-06-04T20:03:53",
+"end": "2026-06-04T21:05:51",
+"duration_s": 3717.9150199890137,
+"distance_km": 10.117,
+"avg_hr": 174.46,
+"max_hr": 189.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-06-07T20:16:19",
+"end": "2026-06-07T20:48:37",
+"duration_s": 1935.1050000190735,
+"distance_km": 5.006,
+"avg_hr": null,
+"max_hr": null,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "Nike Run Club"
+}
+},
+{
+"start": "2026-06-08T21:08:29",
+"end": "2026-06-08T21:30:18",
+"duration_s": 1309.2058550119398,
+"distance_km": 2.882,
+"avg_hr": 151.078,
+"max_hr": 175.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-06-13T08:10:38",
+"end": "2026-06-13T08:46:34",
+"duration_s": 2156.5900869369507,
+"distance_km": 5.96,
+"avg_hr": 176.536,
+"max_hr": 186.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-06-13T08:46:38",
+"end": "2026-06-13T09:27:25",
+"duration_s": 2447.4114170074463,
+"distance_km": 4.265,
+"avg_hr": 159.958,
+"max_hr": 190.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-06-16T20:01:07",
+"end": "2026-06-16T20:26:18",
+"duration_s": 1511.538920998573,
+"distance_km": 4.266,
+"avg_hr": 176.31,
+"max_hr": 192.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-07-07T20:00:59",
+"end": "2026-07-07T20:37:46",
+"duration_s": 2206.488583922386,
+"distance_km": 5.121,
+"avg_hr": 167.171,
+"max_hr": 194.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-07-13T21:39:21",
+"end": "2026-07-13T22:03:00",
+"duration_s": 1419.704899072647,
+"distance_km": 2.994,
+"avg_hr": 160.479,
+"max_hr": 184.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-08-04T20:02:55",
+"end": "2026-08-04T20:47:22",
+"duration_s": 2666.9142709970474,
+"distance_km": 4.922,
+"avg_hr": 161.559,
+"max_hr": 191.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-08-06T20:06:49",
+"end": "2026-08-06T20:37:56",
+"duration_s": 1867.3441659212112,
+"distance_km": 4.442,
+"avg_hr": 176.18,
+"max_hr": 191.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-08-13T20:05:39",
+"end": "2026-08-13T20:38:11",
+"duration_s": 1952.0071959495547,
+"distance_km": 4.786,
+"avg_hr": 171.352,
+"max_hr": 190.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-08-18T20:04:22",
+"end": "2026-08-18T20:36:21",
+"duration_s": 1919.3106709718706,
+"distance_km": 3.979,
+"avg_hr": 160.342,
+"max_hr": 190.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-08-20T20:05:00",
+"end": "2026-08-20T20:38:24",
+"duration_s": 2004.1245460510254,
+"distance_km": 5.007,
+"avg_hr": 171.429,
+"max_hr": 190.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-08-25T20:20:31",
+"end": "2026-08-25T21:32:07",
+"duration_s": 4296.201159000397,
+"distance_km": 10.005,
+"avg_hr": 171.092,
+"max_hr": 195.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-09-01T20:05:08",
+"end": "2026-09-01T21:00:01",
+"duration_s": 3293.347384929657,
+"distance_km": 7.807,
+"avg_hr": 170.195,
+"max_hr": 188.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-09-03T20:03:28",
+"end": "2026-09-03T20:36:39",
+"duration_s": 1991.002543926239,
+"distance_km": 5.019,
+"avg_hr": 168.123,
+"max_hr": 185.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-09-06T07:21:22",
+"end": "2026-09-06T08:38:24",
+"duration_s": 4059.943514943123,
+"distance_km": 10.05,
+"avg_hr": 169.039,
+"max_hr": 189.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+},
+{
+"start": "2026-09-08T20:05:41",
+"end": "2026-09-08T20:35:54",
+"duration_s": 1813.4792519807816,
+"distance_km": 5.006,
+"avg_hr": 172.205,
+"max_hr": 188.0,
+"energy_kcal": null,
+"elev_gain_m": null,
+"source": "health_export",
+"raw": {
+"device": "김창희의 Apple Watch"
+}
+}
+],
+"metrics": [
+{
+"date": "2026-05-13",
+"resting_hr": 71.0,
+"hrv": 22.0868
+},
+{
+"date": "2026-05-15",
+"resting_hr": 80.0,
+"hrv": 38.6912
+},
+{
+"date": "2026-05-19",
+"resting_hr": 69.0,
+"vo2max": 42.0,
+"hrv": 32.2187
+},
+{
+"date": "2026-05-20",
+"resting_hr": 73.0,
+"hrv": 40.9189
+},
+{
+"date": "2026-05-22",
+"resting_hr": 77.0,
+"hrv": 17.545
+},
+{
+"date": "2026-05-23",
+"resting_hr": 64.0,
+"hrv": 59.8595
+},
+{
+"date": "2026-05-26",
+"resting_hr": 67.0,
+"vo2max": 42.88,
+"hrv": 7.10655
+},
+{
+"date": "2026-05-27",
+"resting_hr": 59.0,
+"hrv": 33.7862
+},
+{
+"date": "2026-05-28",
+"resting_hr": 62.0,
+"vo2max": 42.85,
+"hrv": 42.4345
+},
+{
+"date": "2026-05-29",
+"resting_hr": 57.0,
+"hrv": 38.6165
+},
+{
+"date": "2026-05-31",
+"resting_hr": 59.0,
+"hrv": 66.7042
+},
+{
+"date": "2026-06-01",
+"resting_hr": 71.0,
+"vo2max": 43.66,
+"hrv": 18.6905
+},
+{
+"date": "2026-06-05",
+"resting_hr": 70.0,
+"hrv": 40.8926
+},
+{
+"date": "2026-06-06",
+"resting_hr": 69.0,
+"hrv": 35.9277
+},
+{
+"date": "2026-06-07",
+"resting_hr": 111.0
+},
+{
+"date": "2026-06-13",
+"resting_hr": 62.0,
+"vo2max": 43.57,
+"hrv": 22.5204
+},
+{
+"date": "2026-06-17",
+"resting_hr": 66.0,
+"vo2max": 43.4,
+"hrv": 36.3319
+},
+{
+"date": "2026-06-18",
+"resting_hr": 68.0,
+"hrv": 18.9851
+},
+{
+"date": "2026-06-19",
+"resting_hr": 64.0,
+"hrv": 14.6491
+},
+{
+"date": "2026-06-21",
+"resting_hr": 72.0,
+"hrv": 25.5249
+},
+{
+"date": "2026-06-22",
+"resting_hr": 65.0,
+"hrv": 45.9681
+},
+{
+"date": "2026-06-27",
+"resting_hr": 65.0,
+"hrv": 33.5479
+},
+{
+"date": "2026-06-28",
+"resting_hr": 63.0,
+"hrv": 40.6698
+},
+{
+"date": "2026-07-04",
+"resting_hr": 70.0,
+"hrv": 35.4172
+},
+{
+"date": "2026-07-07",
+"resting_hr": 58.0,
+"vo2max": 42.75,
+"hrv": 27.3692
+},
+{
+"date": "2026-07-08",
+"resting_hr": 72.0,
+"hrv": 82.4697
+},
+{
+"date": "2026-07-09",
+"resting_hr": 67.0,
+"hrv": 21.8927
+},
+{
+"date": "2026-07-10",
+"resting_hr": 66.0,
+"hrv": 41.1278
+},
+{
+"date": "2026-07-14",
+"resting_hr": 66.0,
+"hrv": 29.9595
+},
+{
+"date": "2026-07-15",
+"resting_hr": 65.0,
+"hrv": 78.9972
+},
+{
+"date": "2026-07-16",
+"resting_hr": 65.0,
+"hrv": 24.7923
+},
+{
+"date": "2026-07-17",
+"resting_hr": 71.0,
+"hrv": 19.9282
+},
+{
+"date": "2026-07-20",
+"resting_hr": 69.0,
+"hrv": 18.4688
+},
+{
+"date": "2026-07-21",
+"resting_hr": 63.0,
+"hrv": 50.8236
+},
+{
+"date": "2026-07-22",
+"resting_hr": 63.0,
+"hrv": 40.9795
+},
+{
+"date": "2026-07-23",
+"resting_hr": 65.0,
+"hrv": 40.9093
+},
+{
+"date": "2026-07-24",
+"resting_hr": 59.0,
+"hrv": 24.0964
+},
+{
+"date": "2026-07-25",
+"resting_hr": 67.0,
+"hrv": 22.9151
+},
+{
+"date": "2026-07-26",
+"resting_hr": 72.0,
+"hrv": 25.1408
+},
+{
+"date": "2026-07-27",
+"resting_hr": 63.0,
+"hrv": 26.0595
+},
+{
+"date": "2026-08-03",
+"resting_hr": 69.0,
+"vo2max": 41.38,
+"hrv": 15.2618
+},
+{
+"date": "2026-08-04",
+"resting_hr": 66.0,
+"vo2max": 41.83,
+"hrv": 58.7263
+},
+{
+"date": "2026-08-05",
+"resting_hr": 67.0,
+"hrv": 30.924
+},
+{
+"date": "2026-08-06",
+"resting_hr": 68.0,
+"vo2max": 41.95,
+"hrv": 33.6019
+},
+{
+"date": "2026-08-11",
+"resting_hr": 62.0,
+"hrv": 31.4506
+},
+{
+"date": "2026-08-12",
+"resting_hr": 67.0,
+"hrv": 31.1149
+},
+{
+"date": "2026-08-13",
+"resting_hr": 60.0,
+"vo2max": 41.67,
+"hrv": 8.61487
+},
+{
+"date": "2026-08-14",
+"resting_hr": 74.0,
+"hrv": 20.2361
+},
+{
+"date": "2026-08-19",
+"resting_hr": 64.0,
+"hrv": 30.9588
+},
+{
+"date": "2026-08-20",
+"resting_hr": 60.0,
+"vo2max": 41.79,
+"hrv": 11.5599
+},
+{
+"date": "2026-08-22",
+"resting_hr": 61.0,
+"hrv": 71.163
+},
+{
+"date": "2026-08-23",
+"resting_hr": 55.0,
+"hrv": 30.4364
+},
+{
+"date": "2026-08-24",
+"resting_hr": 63.0,
+"hrv": 67.0088
+},
+{
+"date": "2026-08-25",
+"resting_hr": 65.0,
+"vo2max": 41.69,
+"hrv": 27.9261
+},
+{
+"date": "2026-08-28",
+"resting_hr": 62.0,
+"hrv": 22.5257
+},
+{
+"date": "2026-09-01",
+"resting_hr": 59.0,
+"vo2max": 41.4,
+"hrv": 22.6348
+},
+{
+"date": "2026-09-02",
+"resting_hr": 58.0,
+"hrv": 41.7608
+},
+{
+"date": "2026-09-03",
+"resting_hr": 66.0,
+"vo2max": 41.68,
+"hrv": 6.85291
+},
+{
+"date": "2026-09-04",
+"resting_hr": 67.0,
+"hrv": 52.7708
+},
+{
+"date": "2026-09-05",
+"resting_hr": 70.0,
+"hrv": 39.1232
+},
+{
+"date": "2026-09-06",
+"resting_hr": 64.0,
+"vo2max": 41.59,
+"hrv": 47.3591
+},
+{
+"date": "2026-09-07",
+"resting_hr": 57.0,
+"hrv": 33.6019
+},
+{
+"date": "2026-09-08",
+"resting_hr": 64.0,
+"vo2max": 41.91,
+"hrv": 8.35884
+},
+{
+"date": "2026-05-12",
+"vo2max": 41.55
+},
+{
+"date": "2026-05-18",
+"vo2max": 41.84
+},
+{
+"date": "2026-05-21",
+"vo2max": 42.05,
+"hrv": 22.5816
+},
+{
+"date": "2026-06-04",
+"vo2max": 44.12,
+"hrv": 31.5065
+},
+{
+"date": "2026-06-08",
+"vo2max": 44.29,
+"hrv": 50.0351
+},
+{
+"date": "2026-06-16",
+"vo2max": 43.31,
+"hrv": 21.0186
+},
+{
+"date": "2026-07-13",
+"vo2max": 42.51
+},
+{
+"date": "2026-08-18",
+"vo2max": 41.97,
+"hrv": 22.6177
+},
+{
+"date": "2026-05-11",
+"hrv": 18.0139
+},
+{
+"date": "2026-05-14",
+"hrv": 26.9117
+},
+{
+"date": "2026-07-19",
+"hrv": 21.4254
+},
+{
+"date": "2026-08-02",
+"hrv": 20.638
+},
+{
+"date": "2026-08-10",
+"hrv": 28.8157
+},
+{
+"date": "2026-08-26",
+"hrv": 54.2161
+},
+{
+"date": "2026-08-29",
+"hrv": 48.5644
+},
+{
+"date": "2026-08-31",
+"hrv": 58.4504
+}
+]
+}
+}

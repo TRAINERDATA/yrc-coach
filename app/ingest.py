@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 RUN_NAMES = ("running", "run", "달리기", "러닝", "treadmill")
+HR_SAMPLE_INTERVAL_S = 4.5  # 애플워치 운동 중 심박 기록 간격 (실측: 4.0~5.1초)
 
 try:
     from zoneinfo import ZoneInfo
@@ -308,31 +309,40 @@ def parse_hourly(payload: dict) -> list:
             return out
         return [ln.strip() for ln in str(v).splitlines() if ln.strip()]
 
-    def table(name: str, conv):
-        out = {}
+    def pairs(name: str, conv):
+        """(시간키, 값) 목록. 같은 시간대에 여러 개가 올 수 있다(원본 심박 샘플)."""
+        out = []
         for s in items(name):  # 형식 1: [{"start","value"}, ...] (반복문 방식)
             if not isinstance(s, dict):
                 continue
             k = _hour_key(s.get("start") or s.get("date"))
             v = conv(s.get("value") if "value" in s else s.get("qty"))
             if k and v is not None:
-                out[k] = v
+                out.append((k, v))
         # 형식 2: "<name>_dates" / "<name>_values" 줄바꿈 목록 (반복문 없는 빠른 방식)
         dates, values = lines(h.get(f"{name}_dates")), lines(h.get(f"{name}_values"))
         if dates and values and len(dates) == len(values):
             for d, v in zip(dates, values):
                 k, val = _hour_key(d), conv(v)
                 if k and val is not None:
-                    out[k] = val
+                    out.append((k, val))
         elif dates or values:
             import logging
             logging.getLogger(__name__).warning("hourly %s: dates=%d values=%d 개수 불일치", name, len(dates), len(values))
         return out
 
+    def table(name: str, conv):
+        return dict(pairs(name, conv))
+
     speed = table("speed", _speed_kmh)
     dist = table("distance", lambda v: _num(v) / 1000 if _units(v) in ("m", "meters") else _num(v))
-    # 단축어의 시간별 그룹 심박은 '합계'로 오는 경우가 있어(수만 단위) 250 초과는 평균으로 쓰지 않는다
-    hr = {k: v for k, v in table("hr", _num).items() if 30 <= v <= 250}
+    # 심박: 원본 샘플(시간대당 여러 개, 값 100~220)이면 정확 모드. 시간별 그룹(합계, 수만 단위)이면 무시.
+    hr_samples: dict = {}
+    for k, v in pairs("hr", _num):
+        if 30 <= v <= 250:
+            hr_samples.setdefault(k, []).append(v)
+    hr_raw_mode = any(len(v) >= 3 for v in hr_samples.values())
+    hr = {} if hr_raw_mode else {k: v[0] for k, v in hr_samples.items() if len(v) == 1}
 
     run_hours = sorted(k for k, v in speed.items() if v >= 5.5)
     runs, block = [], []
@@ -346,20 +356,36 @@ def parse_hourly(payload: dict) -> list:
 
     out = []
     for hours in runs:
-        d_km = sum(dist.get(k, 0) for k in hours)
+        d_sum = sum(dist.get(k, 0) for k in hours)  # 시간대 걷기+달리기 거리 합 (걷기 포함이라 과대)
         v = sum(speed[k] for k in hours) / len(hours)
-        if d_km < 1.0 or not v:
+        if not v:
             continue
-        dur = d_km / v * 3600
-        hrs = [hr[k] for k in hours if hr.get(k)]
+        samples = [x for k in hours for x in hr_samples.get(k, [])] if hr_raw_mode else []
+        avg_hr = max_hr = None
+        if len(samples) >= 30:
+            # 애플워치는 운동 중 약 4.5초마다 심박을 기록 → 샘플 수로 러닝 시간, 속도×시간으로 거리 (실측 대비 오차 ≈ 0)
+            dur = len(samples) * HR_SAMPLE_INTERVAL_S
+            d_km = v * dur / 3600
+            avg_hr, max_hr = round(sum(samples) / len(samples), 1), max(samples)
+            method = "hr_samples"
+        else:
+            if d_sum < 1.0:
+                continue
+            d_km, dur = d_sum, d_sum / v * 3600
+            hrs = [hr[k] for k in hours if hr.get(k)]
+            avg_hr = round(sum(hrs) / len(hrs), 1) if hrs else None
+            method = "hourly_sum"
+        if d_km < 1.0:
+            continue
         start = parse_dt(hours[0])
         out.append({
             "start": start.isoformat(timespec="seconds"),
             "end": (start + timedelta(seconds=dur)).isoformat(timespec="seconds"),
             "duration_s": round(dur), "distance_km": round(d_km, 3),
-            "avg_hr": round(sum(hrs) / len(hrs), 1) if hrs else None, "max_hr": None,
+            "avg_hr": avg_hr, "max_hr": max_hr,
             "energy_kcal": None, "elev_gain_m": None, "source": "shortcut_hourly",
-            "raw": {"hours": hours, "speed_kmh": round(v, 2), "note": "시간별 샘플로 복원한 근사치"},
+            "raw": {"hours": hours, "speed_kmh": round(v, 2), "method": method, "hr_samples": len(samples),
+                    "hourly_distance_sum": round(d_sum, 2), "note": "단축어 시간별 샘플로 복원"},
         })
     return out
 

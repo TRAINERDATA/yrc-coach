@@ -155,14 +155,20 @@ def init():
                     c.execute(f"ALTER TABLE users ADD COLUMN {col} {typ}")
                 except sqlite3.OperationalError:
                     pass  # 이미 있음
+    import logging
+    log = logging.getLogger(__name__)
     try:
         n = seed_users_from_env()
         if n:
-            import logging
-            logging.getLogger(__name__).info("seeded %d users from SEED_USERS", n)
+            log.info("seeded %d users from SEED_USERS", n)
     except Exception as e:  # noqa: BLE001
-        import logging
-        logging.getLogger(__name__).error("SEED_USERS parse failed: %s", e)
+        log.error("SEED_USERS parse failed: %s", e)
+    try:
+        n = seed_history_from_file()
+        if n:
+            log.info("seeded %d history workouts from seed file", n)
+    except Exception as e:  # noqa: BLE001
+        log.error("seed history failed: %s", e)
 
 
 # ---------- users ----------
@@ -192,6 +198,25 @@ def upsert_user_by_token(spec: dict) -> dict:
         update_user(existing["id"], name=name, channel=channel, **spec)
         return get_user(existing["id"])
     return add_user(name, channel, token=token, **spec)
+
+
+def seed_history_from_file(path: str = None) -> int:
+    """seed/history.json 의 과거 러닝·지표를 (재)적재. 형식: {"<user token>": {"workouts": [...], "metrics": [...]}}
+    Render 무료 플랜처럼 DB 가 초기화되는 환경에서 건강앱 내보내기 기록을 유지하기 위한 용도."""
+    import os
+    from pathlib import Path
+    p = Path(path or os.getenv("SEED_HISTORY_FILE", "seed/history.json"))
+    if not p.exists():
+        return 0
+    data = json.loads(p.read_text(encoding="utf-8"))
+    n = 0
+    for token, payload in data.items():
+        u = get_user_by_token(token)
+        if not u:
+            continue
+        n += upsert_workouts(u["id"], payload.get("workouts") or [])
+        upsert_metrics(u["id"], payload.get("metrics") or [])
+    return n
 
 
 def seed_users_from_env():
@@ -254,6 +279,13 @@ def upsert_workouts(user_id: int, rows: Iterable[dict]) -> int:
                 ),
             )
             n += 1
+        # 같은 시간대에 정확한 기록(건강앱 내보내기/Strava 등)이 있으면 단축어 근사치는 제거
+        c.execute(
+            """DELETE FROM workouts WHERE source='shortcut_hourly' AND user_id=? AND EXISTS (
+                 SELECT 1 FROM workouts w2 WHERE w2.user_id=workouts.user_id AND w2.source!='shortcut_hourly'
+                   AND substr(w2.start,1,13)=substr(workouts.start,1,13))""",
+            (user_id,),
+        )
     return n
 
 

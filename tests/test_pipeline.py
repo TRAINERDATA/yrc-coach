@@ -126,3 +126,26 @@ def test_text_section_body():
     w, _ = ingest.parse_payload(payload)
     assert len(w) == 2 and {x["distance_km"] for x in w} == {6.5, 7.1}
     assert ingest.parse_body(b'{"hourly": {}}') == {"hourly": {}}
+
+
+def test_hourly_raw_hr_samples_and_dedupe():
+    # 20시 러닝: 속도 10km/h, 심박 원본 샘플 400개(=30분) → 거리 5.0km
+    hr_dates = "\n".join(f"2026-09-08T20:{m:02d}:{s:02d}+09:00" for m in range(30) for s in range(0, 60, 5))[:0]
+    dates, vals = [], []
+    for i in range(400):
+        m, s = divmod(i * 4, 60)
+        dates.append(f"2026-09-08T20:{m:02d}:{s:02d}+09:00"); vals.append("170 회/분" if i % 2 else "160 회/분")
+    payload = {"hourly": {"speed_dates": "2026-09-08T20:05:49+09:00", "speed_values": "10 km/h",
+                          "distance_dates": "2026-09-08T20:00:00+09:00", "distance_values": "6.2 km",
+                          "hr_dates": "\n".join(dates), "hr_values": "\n".join(vals)}}
+    w, _ = ingest.parse_payload(payload)
+    assert len(w) == 1 and w[0]["raw"]["method"] == "hr_samples"
+    assert w[0]["distance_km"] == 5.0 and w[0]["duration_s"] == 1800 and w[0]["avg_hr"] == 165 and w[0]["max_hr"] == 170
+    # 정확한 기록이 같은 시간대에 들어오면 근사치는 제거됨
+    u = db.add_user("dedupe", "none")
+    db.upsert_workouts(u["id"], w)
+    assert len(db.workouts_since(u["id"], 400)) == 1
+    db.upsert_workouts(u["id"], [{"start": "2026-09-08T20:05:49", "end": "2026-09-08T20:35:49", "duration_s": 1800,
+                                  "distance_km": 5.01, "avg_hr": 172, "source": "health_export", "raw": {}}])
+    rows = db.workouts_since(u["id"], 400)
+    assert len(rows) == 1 and rows[0]["source"] == "health_export"

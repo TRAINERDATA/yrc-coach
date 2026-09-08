@@ -26,9 +26,17 @@ def _dt(s: str) -> datetime:
 def _open_xml(path: str) -> IO[bytes]:
     if path.lower().endswith(".zip"):
         z = zipfile.ZipFile(path)
-        name = next((n for n in z.namelist() if n.endswith("export.xml") or n.endswith("내보내기.xml")), None)
+
+        def real_name(n: str) -> str:  # 한글 파일명은 zip 안에서 cp437 로 깨져 있을 수 있음
+            try:
+                return n.encode("cp437").decode("utf-8")
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                return n
+
+        cands = [n for n in z.namelist() if real_name(n).lower().endswith(".xml") and "cda" not in real_name(n).lower()]
+        name = next((n for n in cands if real_name(n).endswith(("export.xml", "내보내기.xml"))), None) or (cands[0] if cands else None)
         if not name:
-            raise ValueError("zip 안에 export.xml 이 없습니다")
+            raise ValueError("zip 안에 export.xml(내보내기.xml) 이 없습니다")
         return z.open(name)
     return open(path, "rb")
 
