@@ -285,15 +285,35 @@ def parse_hourly(payload: dict) -> list:
                 fixed.append(x)
         return fixed
 
+    def lines(v) -> list:
+        if v is None:
+            return []
+        if isinstance(v, list):
+            out = []
+            for x in v:
+                out += lines(x)
+            return out
+        return [ln.strip() for ln in str(v).splitlines() if ln.strip()]
+
     def table(name: str, conv):
         out = {}
-        for s in items(name):
+        for s in items(name):  # 형식 1: [{"start","value"}, ...] (반복문 방식)
             if not isinstance(s, dict):
                 continue
             k = _hour_key(s.get("start") or s.get("date"))
             v = conv(s.get("value") if "value" in s else s.get("qty"))
             if k and v is not None:
                 out[k] = v
+        # 형식 2: "<name>_dates" / "<name>_values" 줄바꿈 목록 (반복문 없는 빠른 방식)
+        dates, values = lines(h.get(f"{name}_dates")), lines(h.get(f"{name}_values"))
+        if dates and values and len(dates) == len(values):
+            for d, v in zip(dates, values):
+                k, val = _hour_key(d), conv(v)
+                if k and val is not None:
+                    out[k] = val
+        elif dates or values:
+            import logging
+            logging.getLogger(__name__).warning("hourly %s: dates=%d values=%d 개수 불일치", name, len(dates), len(values))
         return out
 
     speed = table("speed", _speed_kmh)
@@ -337,7 +357,7 @@ def hourly_counts(payload: dict) -> dict:
         return {}
     counts = {}
     for name in ("speed", "distance", "hr"):
-        raw = h.get(name) or []
+        raw = h.get(name) or h.get(f"{name}_dates") or []
         if isinstance(raw, (dict, str)):
             raw = [raw]
         n = 0
