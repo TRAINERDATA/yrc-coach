@@ -131,10 +131,10 @@ def build_summary(user: dict, today: date | None = None) -> dict:
     if today_m.get("sleep_h") and today_m["sleep_h"] < 6:
         body_flags.append(f"수면 부족 ({today_m['sleep_h']:.1f}h)")
     if acwr and acwr > 1.4:
-        load_flags.append(f"부하 급증 ACWR {acwr}")
+        load_flags.append(f"훈련량 급증 (평소의 {round(acwr * 100)}%)")
     if streak >= 5:
         load_flags.append(f"{streak}일 연속 러닝")
-    if km_prev7 and km7 > km_prev7 * 1.25 and km7 - km_prev7 > 5:
+    if not load_flags and km_prev7 and km7 > km_prev7 * 1.25 and km7 - km_prev7 > 5:
         load_flags.append(f"주간 거리 {round((km7 / km_prev7 - 1) * 100)}% 증가")
     flags = body_flags + load_flags
 

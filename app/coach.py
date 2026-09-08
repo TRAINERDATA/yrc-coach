@@ -25,7 +25,7 @@ SYSTEM_PROMPT = """당신은 러닝크루 'YRC'의 전담 러닝 코치입니다
 🏃 {날짜} {이름}님 아침 브리핑
 컨디션: {good/caution/rest 를 한글 한 단어로} — 근거 한 줄
 
-📊 지난 7일: {거리}km / {횟수}회 (지난주 {거리}km, ACWR {값})
+📊 지난 7일: {거리}km / {횟수}회 (지난주 {거리}km, 훈련량은 평소의 {ACWR×100}%)  ← "ACWR" 라는 용어는 쓰지 말 것
 {어제 러닝 한 줄 평가 — 있을 때만}
 
 🎯 오늘 훈련
@@ -151,10 +151,11 @@ def rule_based_briefing(summary: dict) -> str:
 
     week = "\n".join(pl["week_lines"]) if pl["week_lines"] else "이번 주 남은 날 없음. 다음 주 계획은 월요일 브리핑에서."
     tips_text = "\n".join(f"- {x}" for x in tips[:2])
+    load_part = f", 훈련량은 평소의 {round(v['acwr'] * 100)}%" if v.get("acwr") else ""
     return (
         f"🏃 {summary['date']}({summary['weekday']}) {name}님 아침 브리핑\n"
         f"컨디션: {ready} — {reason}\n\n"
-        f"📊 지난 7일: {weekly}km / {v['runs_last7']}회 (지난주 {v['prev7_km']}km, ACWR {v['acwr'] or '-'}){yline}\n\n"
+        f"📊 지난 7일: {weekly}km / {v['runs_last7']}회 (지난주 {v['prev7_km']}km{load_part}){yline}\n\n"
         f"🎯 오늘 훈련\n{pl['today']}\n\n"
         f"📅 이번 주 남은 일정\n{week}\n\n"
         f"📈 분석\n{analysis_text}\n\n"

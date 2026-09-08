@@ -176,3 +176,25 @@ def test_plan_goal_parsing_and_briefing():
     assert "목표 5'30\"" in text and "회복 러닝" in text
     assert len(text) < 1200
     print(text)
+
+
+def test_samsung_health_csv():
+    from app import samsung
+    csv_text = (
+        "com.samsung.shealth.exercise,3,20260909\n"
+        "com.samsung.health.exercise.start_time,com.samsung.health.exercise.end_time,com.samsung.health.exercise.duration,"
+        "com.samsung.health.exercise.distance,com.samsung.health.exercise.exercise_type,com.samsung.health.exercise.mean_heart_rate,"
+        "com.samsung.health.exercise.max_heart_rate,com.samsung.health.exercise.calorie,com.samsung.health.exercise.time_offset,title\n"
+        "2026-09-07 11:05:33.000,2026-09-07 11:37:10.000,1897000,5230.5,1002,158.2,181,410.3,UTC+0900,\n"
+        "2026-09-06 03:00:00.000,2026-09-06 03:20:00.000,1200000,1500,1001,110,130,90,UTC+0900,\n"
+    )
+    w = samsung.parse_csv_text(csv_text)
+    assert len(w) == 1
+    r = w[0]
+    assert r["start"] == "2026-09-07T20:05:33" and r["distance_km"] == 5.231 and r["duration_s"] == 1897
+    assert r["avg_hr"] == 158.2 and r["max_hr"] == 181 and r["source"] == "samsung_health"
+    import zipfile, io
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("samsunghealth_user_20260909/com.samsung.shealth.exercise.20260909.csv", csv_text)
+    assert len(samsung.parse_upload("x.zip", buf.getvalue())) == 1
