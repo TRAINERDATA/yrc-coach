@@ -67,6 +67,7 @@ def parse_csv_text(text: str) -> list:
         "type": _find_col(header, "exercise_type"), "hr": _find_col(header, "mean_heart_rate"),
         "hrmax": _find_col(header, "max_heart_rate"), "kcal": _find_col(header, "calorie"),
         "off": _find_col(header, "time_offset"), "title": _find_col(header, "title"),
+        "cad": _find_col(header, "mean_cadence"), "count": _find_col(header, "count"),
     }
     if ci["start"] is None or ci["dist"] is None:
         return []
@@ -107,11 +108,17 @@ def parse_csv_text(text: str) -> list:
             except ValueError:
                 return None
 
+        cadence = num("cad")
+        if not cadence and num("count") and dur:
+            cadence = round(num("count") / (dur / 60))
+        if cadence and not 120 <= cadence <= 220:
+            cadence = None
         out.append({
             "start": start.isoformat(timespec="seconds"),
             "end": (end or start + timedelta(seconds=dur)).isoformat(timespec="seconds"),
             "duration_s": round(dur), "distance_km": round(dist_km, 3),
             "avg_hr": num("hr"), "max_hr": num("hrmax"), "energy_kcal": num("kcal"), "elev_gain_m": None,
+            "cadence": round(cadence) if cadence else None,
             "source": "samsung_health", "raw": {"exercise_type": et},
         })
     return out

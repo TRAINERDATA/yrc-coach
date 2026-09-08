@@ -344,6 +344,9 @@ def parse_hourly(payload: dict) -> list:
             hr_samples.setdefault(k, []).append(v)
     hr_raw_mode = any(len(v) >= 3 for v in hr_samples.values())
     hr = {} if hr_raw_mode else {k: v[0] for k, v in hr_samples.items() if len(v) == 1}
+    # 케이던스 재료: 달리기 보폭 길이(m, 시간별 평균) 또는 걸음 수(시간별 합계)
+    stride = table("stride", lambda v: (_num(v) / 100 if _units(v) == "cm" else _num(v)))
+    steps = table("steps", _num)
 
     run_hours = sorted(k for k, v in speed.items() if v >= 5.5)
     runs, block = [], []
@@ -378,12 +381,23 @@ def parse_hourly(payload: dict) -> list:
             method = "hourly_sum"
         if d_km < 1.0:
             continue
+        # 케이던스(분당 걸음): 속도(m/min) ÷ 보폭(m). 보폭이 없으면 시간대 걸음 수 ÷ 러닝 시간
+        cadence = None
+        strides = [stride[k] for k in hours if stride.get(k) and 0.4 <= stride[k] <= 2.5]
+        if strides:
+            cadence = round(v * 1000 / 60 / (sum(strides) / len(strides)))
+        else:
+            st = sum(steps.get(k, 0) for k in hours)
+            if st and dur:
+                cadence = round(st / (dur / 60))
+        if cadence and not 120 <= cadence <= 220:
+            cadence = None
         start = parse_dt(hours[0])
         out.append({
             "start": start.isoformat(timespec="seconds"),
             "end": (start + timedelta(seconds=dur)).isoformat(timespec="seconds"),
             "duration_s": round(dur), "distance_km": round(d_km, 3),
-            "avg_hr": avg_hr, "max_hr": max_hr,
+            "avg_hr": avg_hr, "max_hr": max_hr, "cadence": cadence,
             "energy_kcal": None, "elev_gain_m": None, "source": "shortcut_hourly",
             "raw": {"hours": hours, "speed_kmh": round(v, 2), "method": method, "hr_samples": len(samples),
                     "hourly_distance_sum": round(d_sum, 2), "note": "단축어 시간별 샘플로 복원"},
@@ -428,7 +442,7 @@ def hourly_counts(payload: dict) -> dict:
     if not isinstance(h, dict):
         return {}
     counts = {}
-    for name in ("speed", "distance", "hr"):
+    for name in ("speed", "distance", "hr", "stride", "steps"):
         raw = h.get(name) or h.get(f"{name}_dates") or []
         if isinstance(raw, (dict, str)):
             raw = [raw]

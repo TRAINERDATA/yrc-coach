@@ -107,7 +107,8 @@ def rule_based_briefing(summary: dict) -> str:
         if y.get("avg_hr") and u.get("max_hr") and y["avg_hr"] >= u["max_hr"] * 0.9:
             judge += f" 평균심박 {y['avg_hr']} 은 최대심박의 90% 이상이라 꽤 힘들었을 거예요."
         hr_part = f", 평균심박 {y['avg_hr']}" if y.get("avg_hr") else ""
-        yline = f"\n어제: {y['km']}km {y['time_min']}분 (페이스 {y['pace']}{hr_part}){judge}"
+        cad_part = f", 케이던스 {y['cadence']}" if y.get("cadence") else ""
+        yline = f"\n어제: {y['km']}km {y['time_min']}분 (페이스 {y['pace']}{hr_part}{cad_part}){judge}"
 
     tips = []
     gp = planner.goal_progress_line(summary, pl)
@@ -142,6 +143,17 @@ def rule_based_briefing(summary: dict) -> str:
         zone_note = ("좋은 배분이에요." if share >= 70 else
                      "쉬운 강도가 너무 적어요. 80/20 원칙상 러닝의 70~80%는 Z1~3(편한 대화 가능)이어야 회복되면서 늘어요.")
         analysis_lines.append(f"최근 28일 강도 분포: 쉬운 강도(Z1~3) {share}% → {zone_note}")
+    if t.get("cadence_last14"):
+        cad = t["cadence_last14"]
+        prev = t.get("cadence_prev14")
+        trend = f" (2주 전 {prev})" if prev else ""
+        if cad < 160:
+            note = "낮은 편이에요. 보폭을 줄이고 발을 더 자주 딛으면(목표 165~175) 무릎 부담이 줄고 페이스 유지가 쉬워져요. 메트로놈 앱 170bpm 에 맞춰 뛰어보세요."
+        elif cad < 170:
+            note = "보통 범위. 170 이상을 목표로 조금씩 올려보세요."
+        else:
+            note = "좋은 범위예요. 유지하세요."
+        analysis_lines.append(f"케이던스(분당 걸음) 평균 {cad}{trend} → {note}")
     if fit.get("max_hr"):
         z = fit.get("hr_zones") or {}
         z2, z4 = z.get(2) or z.get("2"), z.get(4) or z.get("4")

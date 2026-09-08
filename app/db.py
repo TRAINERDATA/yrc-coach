@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS workouts (
   max_hr REAL,
   energy_kcal REAL,
   elev_gain_m REAL,
+  cadence REAL,
   source TEXT,
   raw TEXT,
   UNIQUE(user_id, start)
@@ -74,6 +75,8 @@ CREATE TABLE IF NOT EXISTS briefings (
 """
 
 # 나중에 추가된 컬럼 (기존 DB 는 init() 에서 ALTER 로 보강)
+EXTRA_WORKOUT_COLUMNS = {"cadence": "REAL"}
+
 EXTRA_USER_COLUMNS = {
     "strava_athlete_id": "TEXT",
     "strava_access_token": "TEXT",
@@ -147,14 +150,15 @@ def init():
     schema = SCHEMA.replace("{ID}", "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT")
     with conn() as c:
         c.executescript(schema)
-        for col, typ in EXTRA_USER_COLUMNS.items():
-            if IS_PG:
-                c.execute(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} {typ}")
-            else:
-                try:
-                    c.execute(f"ALTER TABLE users ADD COLUMN {col} {typ}")
-                except sqlite3.OperationalError:
-                    pass  # 이미 있음
+        for table, cols in (("users", EXTRA_USER_COLUMNS), ("workouts", EXTRA_WORKOUT_COLUMNS)):
+            for col, typ in cols.items():
+                if IS_PG:
+                    c.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {typ}")
+                else:
+                    try:
+                        c.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+                    except sqlite3.OperationalError:
+                        pass  # 이미 있음
     import logging
     log = logging.getLogger(__name__)
     try:
@@ -265,16 +269,16 @@ def upsert_workouts(user_id: int, rows: Iterable[dict]) -> int:
         for w in rows:
             c.execute(
                 """INSERT INTO workouts
-                   (user_id,start,"end",duration_s,distance_km,avg_hr,max_hr,energy_kcal,elev_gain_m,source,raw)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                   (user_id,start,"end",duration_s,distance_km,avg_hr,max_hr,energy_kcal,elev_gain_m,cadence,source,raw)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(user_id,start) DO UPDATE SET
                      "end"=excluded."end", duration_s=excluded.duration_s, distance_km=excluded.distance_km,
                      avg_hr=COALESCE(excluded.avg_hr,workouts.avg_hr), max_hr=COALESCE(excluded.max_hr,workouts.max_hr),
                      energy_kcal=COALESCE(excluded.energy_kcal,workouts.energy_kcal),
-                     elev_gain_m=COALESCE(excluded.elev_gain_m,workouts.elev_gain_m), source=excluded.source, raw=excluded.raw""",
+                     elev_gain_m=COALESCE(excluded.elev_gain_m,workouts.elev_gain_m), cadence=COALESCE(excluded.cadence,workouts.cadence), source=excluded.source, raw=excluded.raw""",
                 (
                     user_id, w["start"], w.get("end"), w.get("duration_s"), w.get("distance_km"),
-                    w.get("avg_hr"), w.get("max_hr"), w.get("energy_kcal"), w.get("elev_gain_m"),
+                    w.get("avg_hr"), w.get("max_hr"), w.get("energy_kcal"), w.get("elev_gain_m"), w.get("cadence"),
                     w.get("source", "health_auto_export"), json.dumps(w.get("raw"), ensure_ascii=False),
                 ),
             )

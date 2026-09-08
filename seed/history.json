@@ -13,7 +13,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 154
 },
 {
 "start": "2026-05-12T20:26:49",
@@ -27,7 +28,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": null
 },
 {
 "start": "2026-05-15T17:47:47",
@@ -41,7 +43,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 120
 },
 {
 "start": "2026-05-15T17:44:12",
@@ -55,7 +58,8 @@
 "source": "health_export",
 "raw": {
 "device": "Nike Run Club"
-}
+},
+"cadence": 124
 },
 {
 "start": "2026-05-18T20:03:17",
@@ -69,7 +73,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 155
 },
 {
 "start": "2026-05-19T20:00:56",
@@ -83,7 +88,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 156
 },
 {
 "start": "2026-05-21T20:01:42",
@@ -97,7 +103,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 157
 },
 {
 "start": "2026-05-26T19:38:20",
@@ -111,7 +118,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 153
 },
 {
 "start": "2026-05-26T19:51:07",
@@ -125,7 +133,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 154
 },
 {
 "start": "2026-05-28T20:02:15",
@@ -139,7 +148,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 155
 },
 {
 "start": "2026-06-01T20:01:30",
@@ -153,7 +163,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 155
 },
 {
 "start": "2026-06-04T20:03:53",
@@ -167,7 +178,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 156
 },
 {
 "start": "2026-06-07T20:16:19",
@@ -195,7 +207,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 145
 },
 {
 "start": "2026-06-13T08:10:38",
@@ -209,7 +222,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 157
 },
 {
 "start": "2026-06-13T08:46:38",
@@ -223,7 +237,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": null
 },
 {
 "start": "2026-06-16T20:01:07",
@@ -237,7 +252,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 154
 },
 {
 "start": "2026-07-07T20:00:59",
@@ -251,7 +267,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 143
 },
 {
 "start": "2026-07-13T21:39:21",
@@ -265,7 +282,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 135
 },
 {
 "start": "2026-08-04T20:02:55",
@@ -279,7 +297,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 124
 },
 {
 "start": "2026-08-06T20:06:49",
@@ -293,7 +312,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 143
 },
 {
 "start": "2026-08-13T20:05:39",
@@ -307,7 +327,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 152
 },
 {
 "start": "2026-08-18T20:04:22",
@@ -321,7 +342,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 132
 },
 {
 "start": "2026-08-20T20:05:00",
@@ -335,7 +357,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 152
 },
 {
 "start": "2026-08-25T20:20:31",
@@ -349,7 +372,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 146
 },
 {
 "start": "2026-09-01T20:05:08",
@@ -363,7 +387,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 151
 },
 {
 "start": "2026-09-03T20:03:28",
@@ -377,7 +402,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 155
 },
 {
 "start": "2026-09-06T07:21:22",
@@ -391,7 +417,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 155
 },
 {
 "start": "2026-09-08T20:05:41",
@@ -405,7 +432,8 @@
 "source": "health_export",
 "raw": {
 "device": "김창희의 Apple Watch"
-}
+},
+"cadence": 158
 }
 ],
 "metrics": [

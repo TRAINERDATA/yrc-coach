@@ -175,7 +175,7 @@ def render_card(summary: dict) -> bytes:
     # ================= 최근 러닝 표 =================
     ax = fig.add_subplot(gs[3, :])
     ax.axis("off")
-    _panel(ax, "최근 러닝", "최근 14일 · 막대 = 거리 · 페이스 · 평균 심박")
+    _panel(ax, "최근 러닝", "최근 14일 · 막대 = 거리 · 페이스 · 평균 심박 · 케이던스(분당 걸음, 목표 170~180)")
     runs = (summary.get("recent_runs") or [])[:6]
     pz = fit.get("paces_sec") or {}
     if runs:
@@ -202,11 +202,13 @@ def render_card(summary: dict) -> bytes:
                 col = ZONE_EASY
             _rounded(ax, 0.16, y - 0.035, bw, 0.07, col, r=0.01)
             ax.text(0.16 + bw + 0.012, y, f"{x['km']:.1f} km", color=TXT, fontsize=10.5, fontweight="bold", va="center", transform=ax.transAxes)
-            ax.text(0.66, y, x["pace"], color=TXT, fontsize=11, fontweight="bold", va="center", transform=ax.transAxes)
+            ax.text(0.63, y, x["pace"], color=TXT, fontsize=11, fontweight="bold", va="center", transform=ax.transAxes)
             ax.text(0.66, y - 0.035 * 2.2, "페이스", color=MUTED, fontsize=7.5, va="center", transform=ax.transAxes) if i == 0 and False else None
             hr_txt = f"♥ {x['avg_hr']}" if x.get("avg_hr") else "♥ -"
-            ax.text(0.80, y, hr_txt, color=TXT2, fontsize=10.5, va="center", transform=ax.transAxes)
-            ax.text(0.93, y, f"{x['time_min']:.0f}분", color=MUTED, fontsize=10, va="center", transform=ax.transAxes)
+            ax.text(0.76, y, hr_txt, color=TXT2, fontsize=10.5, va="center", transform=ax.transAxes)
+            cad_txt = f"{x['cadence']} spm" if x.get("cadence") else ""
+            ax.text(0.865, y, cad_txt, color=TXT2, fontsize=10, va="center", transform=ax.transAxes)
+            ax.text(0.99, y, f"{x['time_min']:.0f}분", color=MUTED, fontsize=10, va="center", ha="right", transform=ax.transAxes)
         ax.text(0.99, -0.06, "막대 색: 빨강 = 강도 높음 · 파랑 = 보통 · 하늘 = 쉬운 강도", color=MUTED, fontsize=8, transform=ax.transAxes, va="top", ha="right")
     else:
         ax.text(0.5, 0.5, "최근 14일 러닝 기록이 없어요", color=MUTED, ha="center", transform=ax.transAxes)

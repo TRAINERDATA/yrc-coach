@@ -198,3 +198,16 @@ def test_samsung_health_csv():
     with zipfile.ZipFile(buf, "w") as z:
         z.writestr("samsunghealth_user_20260909/com.samsung.shealth.exercise.20260909.csv", csv_text)
     assert len(samsung.parse_upload("x.zip", buf.getvalue())) == 1
+
+
+def test_cadence_from_stride_and_steps():
+    base = {"hourly": {"speed_dates": "2026-09-08T20:05:49+09:00", "speed_values": "10 km/h",
+                       "distance_dates": "2026-09-08T20:00:00+09:00", "distance_values": "5.2 km"}}
+    p = json.loads(json.dumps(base))
+    p["hourly"]["stride_dates"] = "2026-09-08T20:05:49+09:00"; p["hourly"]["stride_values"] = "0.98 m"
+    w, _ = ingest.parse_payload(p)
+    assert w[0]["cadence"] == 170  # 10km/h = 166.7 m/min ÷ 0.98 m
+    p = json.loads(json.dumps(base))
+    p["hourly"]["steps_dates"] = "2026-09-08T20:00:00+09:00"; p["hourly"]["steps_values"] = "5200 걸음"
+    w, _ = ingest.parse_payload(p)
+    assert w[0]["cadence"] == round(5200 / (w[0]["duration_s"] / 60))

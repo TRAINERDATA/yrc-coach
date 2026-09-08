@@ -84,8 +84,11 @@ def build_summary(user: dict, today: date | None = None) -> dict:
             "avg_hr": round(w["avg_hr"]) if w.get("avg_hr") else None,
             "max_hr": round(w["max_hr"]) if w.get("max_hr") else None,
             "elev_m": round(w["elev_gain_m"]) if w.get("elev_gain_m") else None,
+            "cadence": round(w["cadence"]) if w.get("cadence") else None,
             "load": _load(w, max_hr),
         })
+    cad_recent = _mean([w.get("cadence") for w in last14 if w.get("cadence")])
+    cad_prev = _mean([w.get("cadence") for w in prev14 if w.get("cadence")])
 
     yesterday = [w for w in runs if _day(w) == today - timedelta(days=1)]
     last_run_day = max((_day(w) for w in runs), default=None)
@@ -218,6 +221,8 @@ def build_summary(user: dict, today: date | None = None) -> dict:
             "avg_pace_last14": pace_str(p_recent), "avg_pace_prev14": pace_str(p_prev),
             "pace_delta_sec_per_km": pace_delta,
             "hr_per_kmh_last14": eff_recent, "hr_per_kmh_prev14": eff_prev,
+            "cadence_last14": round(cad_recent) if cad_recent else None,
+            "cadence_prev14": round(cad_prev) if cad_prev else None,
         },
         "recovery": {
             "today": {k: today_m.get(k) for k in ("resting_hr", "hrv", "sleep_h", "steps")},

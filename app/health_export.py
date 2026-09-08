@@ -46,6 +46,7 @@ def parse(path: str, days: int = 90):
     since = datetime.now() - timedelta(days=days)
     workouts, metrics = [], {}
     sleep_by_day: dict = {}
+    step_records = []  # (start, end, steps) 워치 기록만 → 러닝 케이던스 계산
     with _open_xml(path) as f:
         for _, el in ET.iterparse(f, events=("end",)):
             tag = el.tag
@@ -81,6 +82,15 @@ def parse(path: str, days: int = 90):
                 el.clear()
             elif tag == "Record":
                 t = el.get("type")
+                if t == "HKQuantityTypeIdentifierStepCount" and "watch" in (el.get("sourceName") or "").lower():
+                    st = _dt(el.get("startDate"))
+                    if st >= since:
+                        try:
+                            step_records.append((st, _dt(el.get("endDate")), float(el.get("value"))))
+                        except (TypeError, ValueError):
+                            pass
+                    el.clear()
+                    continue
                 col = METRIC_TYPES.get(t)
                 if col or t == "HKCategoryTypeIdentifierSleepAnalysis":
                     start = _dt(el.get("startDate"))
@@ -99,6 +109,21 @@ def parse(path: str, days: int = 90):
                 el.clear()
             elif tag in ("Correlation", "ActivitySummary", "ClinicalRecord"):
                 el.clear()
+    # 러닝 구간에 겹치는 워치 걸음 수 → 케이던스
+    if step_records:
+        step_records.sort()
+        for w in workouts:
+            ws, we = datetime.fromisoformat(w["start"]), datetime.fromisoformat(w["end"])
+            total = 0.0
+            for st, en, val in step_records:
+                if en <= ws or st >= we:
+                    continue
+                overlap = (min(en, we) - max(st, ws)).total_seconds()
+                span = (en - st).total_seconds() or 1
+                total += val * max(0.0, min(1.0, overlap / span))
+            if total and w["duration_s"]:
+                cad = round(total / (w["duration_s"] / 60))
+                w["cadence"] = cad if 120 <= cad <= 220 else None
     for day, h in sleep_by_day.items():
         metrics.setdefault(day, {"date": day})["sleep_h"] = round(h, 2)
     out = []
