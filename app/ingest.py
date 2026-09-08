@@ -269,15 +269,20 @@ def parse_hourly(payload: dict) -> list:
                 out.extend(x)
             else:
                 out.append(x)
+        import json
         fixed = []
         for x in out:
-            if isinstance(x, str) and x.strip().startswith("{"):
-                try:
-                    import json
-                    x = json.loads(x)
-                except ValueError:
-                    continue
-            fixed.append(x)
+            if isinstance(x, str):
+                # 단축어는 목록을 "{...}\n{...}\n{...}" 한 덩어리 문자열로 보낸다
+                for line in x.splitlines():
+                    line = line.strip()
+                    if line.startswith("{"):
+                        try:
+                            fixed.append(json.loads(line))
+                        except ValueError:
+                            pass
+            else:
+                fixed.append(x)
         return fixed
 
     def table(name: str, conv):
@@ -323,6 +328,28 @@ def parse_hourly(payload: dict) -> list:
             "raw": {"hours": hours, "speed_kmh": round(v, 2), "note": "시간별 샘플로 복원한 근사치"},
         })
     return out
+
+
+def hourly_counts(payload: dict) -> dict:
+    """디버깅용: 시간별 샘플이 종류별로 몇 시간대 들어왔는지."""
+    h = payload.get("hourly")
+    if not isinstance(h, dict):
+        return {}
+    counts = {}
+    for name in ("speed", "distance", "hr"):
+        raw = h.get(name) or []
+        if isinstance(raw, (dict, str)):
+            raw = [raw]
+        n = 0
+        for x in raw:
+            if isinstance(x, str):
+                n += sum(1 for line in x.splitlines() if line.strip().startswith("{"))
+            elif isinstance(x, list):
+                n += len(x)
+            else:
+                n += 1
+        counts[name] = n
+    return counts
 
 
 def parse_payload(payload: dict):

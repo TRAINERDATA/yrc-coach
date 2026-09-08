@@ -66,7 +66,8 @@ async def ingest_data(token: str, request: Request):
     db.save_raw_payload(user["id"], payload)  # 단축어 디버깅용 (마지막 1건만 보관)
     log.info("ingest %s: %d workouts, %d metric-days", user["name"], nw, nm)
     return {"ok": True, "workouts": nw, "metric_days": nm,
-            "runs": [{"start": w["start"], "km": w["distance_km"]} for w in workouts[-5:]]}
+            "runs": [{"start": w["start"], "km": w["distance_km"]} for w in workouts[-5:]],
+            "hourly_hours": ingest.hourly_counts(payload)}
 
 
 @app.get("/ingest/{token}/last")
