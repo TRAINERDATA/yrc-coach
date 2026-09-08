@@ -363,7 +363,7 @@ def hourly_counts(payload: dict) -> dict:
         n = 0
         for x in raw:
             if isinstance(x, str):
-                n += sum(1 for line in x.splitlines() if line.strip().startswith("{"))
+                n += sum(1 for line in x.splitlines() if line.strip())
             elif isinstance(x, list):
                 n += len(x)
             else:
