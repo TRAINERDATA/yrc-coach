@@ -145,13 +145,13 @@ a{color:var(--accent-ink)}
 <li>값 필터는 넣지 않습니다.</li>
 </ol>
 
-<h3 style="font-size:17px;margin:18px 0 8px">3-4b. 동작 ③-2 걸음 수 찾기 (케이던스용)</h3>
+<h3 style="font-size:17px;margin:18px 0 8px">3-4b. 동작 ③-2 달리기 보폭 길이 찾기 (케이던스용)</h3>
 <ol>
 <li><span class="ui">동작 검색</span> → <code>건강 샘플</code> → 찾기 추가. "필터링"이면 변수 지우기.</li>
-<li>유형: <code>걸음 수</code>. 시작일: 과거 <b>56</b>일. 그룹화 <span class="ui">시간</span>. 파일이 유실됨 끄기. 제한 끄기.</li>
-<li><span class="ui">필터 추가</span> → <span class="ui">소스 이름</span> → <span class="ui">다음을 포함</span> → <code>Watch</code> (아이폰 걸음과 중복 방지).</li>
+<li>유형: <code>달리기 보폭 길이</code> (검색창에 "보폭"). 시작일: 과거 <b>56</b>일. 단위 <span class="ui">m</span>. 그룹화 <span class="ui">시간</span>. 파일이 유실됨 끄기. 제한 끄기.</li>
+<li><span class="ui">필터 추가</span> → <span class="ui">소스 이름</span> → <span class="ui">다음을 포함</span> → <code>Watch</code>. <b>이 필터가 꼭 필요합니다.</b> 아이폰이 걸을 때 재는 보폭이 섞이면 케이던스가 엉망이 됩니다.</li>
 </ol>
-<p style="color:var(--muted);font-size:14px;margin:6px 0 0">러닝 시간 동안의 걸음 수 ÷ 분 = 케이던스(분당 걸음 수)입니다. 애플 피트니스 앱이 보여주는 케이던스와 같은 방식입니다. 이 동작이 없어도 나머지는 동작하지만 케이던스 항목이 비어 있게 됩니다.</p>
+<p style="color:var(--muted);font-size:14px;margin:6px 0 0">속도 ÷ 보폭 = 케이던스(분당 걸음 수)입니다. 실제 기록과 ±3 안에서 맞는 것을 확인했습니다. 이 동작이 없어도 나머지는 동작하지만 케이던스 항목이 비어 있게 됩니다.</p>
 
 <h3 style="font-size:17px;margin:18px 0 8px">3-5. 동작 ④ 텍스트로 묶기</h3>
 <ol>
@@ -169,9 +169,9 @@ a{color:var(--accent-ink)}
 (여기: 동작③ 시작일)
 ##hr_values
 (여기: 동작③ 건강 샘플)
-##steps_dates
+##stride_dates
 (여기: 동작③-2 시작일)
-##steps_values
+##stride_values
 (여기: 동작③-2 건강 샘플)</pre></li>
 <li>변수 넣는 법 (괄호 부분을 지우고 그 자리에):
 <ol>
