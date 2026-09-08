@@ -119,8 +119,17 @@ def render_card(summary: dict) -> bytes:
     tiles = [
         ("이번 주 거리 (7일)", f"{v['last7_km']} km", f"{v['runs_last7']}회 러닝 · " + km_delta[0], km_delta[1]),
         ("최근 2주 평균 페이스", pace_now or "-", pace_delta[0] or f"그 전 2주 {pace_prev}", pace_delta[1]),
-        ("예상 10K 기록", pred10 or "-", f"체력 지수 VDOT {fit.get('vdot')}" if fit.get("vdot") else "기록이 더 필요해요", MUTED),
     ]
+    cad_avg, cad_prev = t.get("cadence_last14"), t.get("cadence_prev14")
+    if cad_avg:
+        from . import plan as _plan
+        cp = _plan.cadence_plan(summary)
+        cd = cp.get("delta")
+        sub = f"이번 주 목표 {cp['target']}" + (f" · {'▲' if cd > 0 else '▼'} {abs(cd)} vs 2주 전" if cd else "")
+        tiles.append(("케이던스 (핵심 과제)", f"{cad_avg} spm", sub, GOOD if (cd or 0) > 0 else (WARN if (cd or 0) < 0 else MUTED)))
+    else:
+        tiles.append(("예상 10K 기록", pred10 or "-", f"체력 지수 VDOT {fit.get('vdot')}" if fit.get("vdot") else "기록이 더 필요해요", MUTED))
+    cad_target = cp.get("target") if cad_avg else None
     for i, (label, big, sub, subcol) in enumerate(tiles):
         x = i * 0.345
         _rounded(kp, x, 0, 0.31, 1.0, PANEL, r=0.06)
@@ -175,7 +184,7 @@ def render_card(summary: dict) -> bytes:
     # ================= 최근 러닝 표 =================
     ax = fig.add_subplot(gs[3, :])
     ax.axis("off")
-    _panel(ax, "최근 러닝", "최근 14일 · 막대 = 거리 · 페이스 · 평균 심박 · 케이던스(분당 걸음, 목표 170~180)")
+    _panel(ax, "최근 러닝", f"최근 14일 · 막대 = 거리 · 페이스 · 평균 심박 · 케이던스 (초록 = 이번 주 목표 {cad_target or '-'} 달성)")
     runs = (summary.get("recent_runs") or [])[:6]
     pz = fit.get("paces_sec") or {}
     if runs:
@@ -207,7 +216,11 @@ def render_card(summary: dict) -> bytes:
             hr_txt = f"♥ {x['avg_hr']}" if x.get("avg_hr") else "♥ -"
             ax.text(0.76, y, hr_txt, color=TXT2, fontsize=10.5, va="center", transform=ax.transAxes)
             cad_txt = f"{x['cadence']} spm" if x.get("cadence") else ""
-            ax.text(0.865, y, cad_txt, color=TXT2, fontsize=10, va="center", transform=ax.transAxes)
+            cad_col = TXT2
+            if x.get("cadence") and cad_target:
+                cad_col = GOOD if x["cadence"] >= cad_target else (WARN if x["cadence"] < cad_target - 5 else TXT2)
+            ax.text(0.865, y, cad_txt, color=cad_col, fontsize=10, va="center", transform=ax.transAxes,
+                    fontweight="bold" if cad_col != TXT2 else "normal")
             ax.text(0.99, y, f"{x['time_min']:.0f}분", color=MUTED, fontsize=10, va="center", ha="right", transform=ax.transAxes)
         ax.text(0.99, -0.06, "막대 색: 빨강 = 강도 높음 · 파랑 = 보통 · 하늘 = 쉬운 강도", color=MUTED, fontsize=8, transform=ax.transAxes, va="top", ha="right")
     else:

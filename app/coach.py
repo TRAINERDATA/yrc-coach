@@ -79,6 +79,15 @@ def _claude_briefing(summary: dict, history: list) -> str:
     return text
 
 
+def date_idx(summary: dict) -> int:
+    """날짜별로 팁이 돌아가도록 하는 인덱스."""
+    from datetime import date
+    try:
+        return date.fromisoformat(summary["date"]).toordinal()
+    except Exception:  # noqa: BLE001
+        return 0
+
+
 def rule_based_briefing(summary: dict) -> str:
     """API 없이도 돌아가는 처방. 목표·주당 횟수·현재 페이스·회복 상태 기반 (plan.py)."""
     from . import plan as planner
@@ -110,7 +119,44 @@ def rule_based_briefing(summary: dict) -> str:
         cad_part = f", 케이던스 {y['cadence']}" if y.get("cadence") else ""
         yline = f"\n어제: {y['km']}km {y['time_min']}분 (페이스 {y['pace']}{hr_part}{cad_part}){judge}"
 
+    # ---- 케이던스 섹션 (핵심 과제) ----
+    cad = pl.get("cadence") or {}
+    cad_lines = []
+    if cad.get("avg"):
+        avg, target, prev, delta = cad["avg"], cad["target"], cad.get("prev"), cad.get("delta")
+        trend_txt = ""
+        if delta is not None:
+            trend_txt = f" (2주 전 {prev} → {'+' if delta >= 0 else ''}{delta})"
+        cad_lines.append(f"최근 2주 평균 {avg}{trend_txt} · 이번 주 목표 {target} · 최종 목표 {cad['goal']}")
+        if cad.get("yesterday"):
+            y_c = cad["yesterday"]
+            if y_c >= target:
+                cad_lines.append(f"어제 {y_c}: 목표 달성! 이 리듬을 몸에 익히는 중이에요.")
+            elif y_c >= avg:
+                cad_lines.append(f"어제 {y_c}: 평균보다 높았어요. 목표 {target}까지 {target - y_c}만 더.")
+            else:
+                cad_lines.append(f"어제 {y_c}: 평균보다 낮았어요. 피곤하면 보폭이 늘어지고 케이던스가 떨어집니다. 짧고 가볍게 딛기.")
+        status_note = {
+            "reached": "최종 목표에 도달했어요. 이제 유지하면서 페이스를 올릴 차례.",
+            "improving": "올라가는 중이에요. 이 속도면 2주마다 목표를 한 단계씩 올립니다.",
+            "dropping": "최근 2주 케이던스가 떨어졌어요. 장거리 후반이나 피로할 때 보폭이 커지는지 확인하세요.",
+            "flat": "정체 상태예요. 이번 주는 매 러닝 첫 5분을 메트로놈에 맞춰 시작해보세요.",
+        }.get(cad.get("status"), "")
+        if status_note:
+            cad_lines.append(status_note)
+        drills = [
+            "메트로놈 앱(무료)을 목표 bpm에 맞추고 발 딛는 소리를 박자에 맞추기. 처음엔 5분만, 익숙해지면 러닝 전체.",
+            "발이 몸 아래에서 착지하도록 보폭을 조금 줄이기. 속도는 그대로 두고 걸음만 잦게.",
+            "팔을 빠르게 흔들면 다리가 따라옵니다. 팔꿈치 90도, 짧고 빠르게.",
+            "쉬운 러닝 끝에 20초 스트라이드 4~6회 (케이던스 180 느낌, 전력 질주 아님).",
+            "언덕 오르막을 짧게 뛰면 자연스럽게 케이던스가 올라갑니다. 30초 × 4회.",
+        ]
+        cad_lines.append("오늘의 팁: " + drills[date_idx(summary) % len(drills)])
+    cad_text = "\n".join(cad_lines) if cad_lines else "러닝 기록에 케이던스가 아직 없어요. 단축어에 보폭 동작이 들어가면 표시됩니다."
+
     tips = []
+    if cad.get("avg") and cad["avg"] < cad["goal"]:
+        tips.append(f"케이던스 {cad['avg']}→{cad['goal']}이 5:30 목표의 지름길이에요. 같은 심박에서 페이스가 빨라지고 무릎·정강이 부담이 줄어듭니다.")
     gp = planner.goal_progress_line(summary, pl)
     if gp:
         tips.append(gp)
@@ -143,17 +189,6 @@ def rule_based_briefing(summary: dict) -> str:
         zone_note = ("좋은 배분이에요." if share >= 70 else
                      "쉬운 강도가 너무 적어요. 80/20 원칙상 러닝의 70~80%는 Z1~3(편한 대화 가능)이어야 회복되면서 늘어요.")
         analysis_lines.append(f"최근 28일 강도 분포: 쉬운 강도(Z1~3) {share}% → {zone_note}")
-    if t.get("cadence_last14"):
-        cad = t["cadence_last14"]
-        prev = t.get("cadence_prev14")
-        trend = f" (2주 전 {prev})" if prev else ""
-        if cad < 160:
-            note = "낮은 편이에요. 보폭을 줄이고 발을 더 자주 딛으면(목표 165~175) 무릎 부담이 줄고 페이스 유지가 쉬워져요. 메트로놈 앱 170bpm 에 맞춰 뛰어보세요."
-        elif cad < 170:
-            note = "보통 범위. 170 이상을 목표로 조금씩 올려보세요."
-        else:
-            note = "좋은 범위예요. 유지하세요."
-        analysis_lines.append(f"케이던스(분당 걸음) 평균 {cad}{trend} → {note}")
     if fit.get("max_hr"):
         z = fit.get("hr_zones") or {}
         z2, z4 = z.get(2) or z.get("2"), z.get(4) or z.get("4")
@@ -169,6 +204,7 @@ def rule_based_briefing(summary: dict) -> str:
         f"컨디션: {ready} — {reason}\n\n"
         f"📊 지난 7일: {weekly}km / {v['runs_last7']}회 (지난주 {v['prev7_km']}km{load_part}){yline}\n\n"
         f"🎯 오늘 훈련\n{pl['today']}\n\n"
+        f"🦶 케이던스 (핵심 과제)\n{cad_text}\n\n"
         f"📅 이번 주 남은 일정\n{week}\n\n"
         f"📈 분석\n{analysis_text}\n\n"
         f"💡 보완 포인트\n{tips_text}"

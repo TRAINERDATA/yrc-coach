@@ -99,6 +99,43 @@ def _week_index(d: date) -> int:
     return d.isocalendar()[1]
 
 
+CADENCE_GOAL = 172  # 최종 목표 (분당 걸음). 160 미만은 낮음, 165~175 권장 범위.
+
+
+def cadence_plan(summary: dict) -> dict:
+    """케이던스 현황과 이번 주 목표. 2주 평균 + 3~5 씩 단계적으로 올린다 (한 번에 10% 이상 올리면 종아리 부상 위험)."""
+    t = summary.get("trend") or {}
+    avg, prev = t.get("cadence_last14"), t.get("cadence_prev14")
+    if not avg:
+        return {"avg": None, "prev": None, "target": None, "delta": None, "status": "no_data"}
+    step = 5 if avg < 160 else (4 if avg < 168 else 3)
+    target = min(CADENCE_GOAL, avg + step)
+    delta = (avg - prev) if prev else None
+    if avg >= CADENCE_GOAL:
+        status = "reached"
+    elif delta is not None and delta >= 2:
+        status = "improving"
+    elif delta is not None and delta <= -2:
+        status = "dropping"
+    else:
+        status = "flat"
+    yest = (summary.get("yesterday_runs") or [{}])[0].get("cadence")
+    return {"avg": avg, "prev": prev, "target": target, "delta": delta, "status": status, "yesterday": yest,
+            "goal": CADENCE_GOAL}
+
+
+def cadence_cue(target: int | None, kind: str) -> str:
+    if not target:
+        return ""
+    if kind in ("quality", "tempo"):
+        return f" 빠른 구간은 케이던스 {target + 3}+ 로, 조깅 구간도 {target - 5} 아래로 떨어뜨리지 않기."
+    if kind == "long":
+        return f" 케이던스 {target} 유지가 오늘의 진짜 과제. 10분마다 20걸음 세어보기(=20초에 {round(target / 3)}걸음)."
+    if kind == "easy":
+        return f" 느리게 뛰되 케이던스는 {target} (메트로놈 {target}bpm 켜기). 마지막에 20초 스트라이드 4회, 케이던스 180 느낌으로."
+    return ""
+
+
 def session_text(kind: str, summary: dict, p: dict, goal: dict, today: date) -> str:
     weekly = summary["volume"]["last7_km"] or 0
     base = max(weekly, 12)  # 볼륨이 아주 적어도 최소 처방
@@ -157,6 +194,10 @@ def build_plan(summary: dict) -> dict:
             kind = "easy"  # 너무 오래 쉬었으면 휴식일이어도 가볍게
         today_text = session_text(kind, summary, p, goal, today)
 
+    cad = cadence_plan(summary)
+    if kind != "rest" and readiness != "rest":
+        today_text += cadence_cue(cad.get("target"), kind)
+
     week_lines = []
     for d in range(today.weekday() + 1, 7):
         k = template[d]
@@ -170,7 +211,7 @@ def build_plan(summary: dict) -> dict:
             elif k in ("quality", "tempo"):
                 detail = f" @{pace_str(p['tempo'])}~{pace_str(p['interval'])}"
         week_lines.append(f"{WEEKDAYS[d]}: {label}{detail}")
-    return {"today": today_text, "today_kind": kind, "week_lines": week_lines, "paces": p, "goal": goal}
+    return {"today": today_text, "today_kind": kind, "week_lines": week_lines, "paces": p, "goal": goal, "cadence": cad}
 
 
 def goal_progress_line(summary: dict, plan: dict) -> str | None:
