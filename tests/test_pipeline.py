@@ -49,7 +49,7 @@ def test_summary_and_rule_briefing():
     assert s["volume"]["last7_km"] == 6.4 and s["volume"]["runs_last7"] == 1
     assert s["yesterday_runs"][0]["pace"] == "5'50\""
     text = coach.rule_based_briefing(s)
-    assert "테스트님" in text and "오늘 훈련" in text and len(text) < 900
+    assert "브리핑" in text and "🎯 오늘" in text and len(text) < 900
     # 중복 저장은 upsert
     assert db.upsert_workouts(u["id"], w) == 1
     assert len(db.workouts_since(u["id"], 400)) == 1
