@@ -172,10 +172,9 @@ def test_plan_goal_parsing_and_briefing():
         "data_points": {"runs_56d": 10, "metric_days_35d": 26},
     }
     text = coach.rule_based_briefing(summary)
-    assert "이번 주 남은 일정" in text and "목: " in text and "토: 장거리" in text
-    assert "목표 5'30\"" in text and "회복 러닝" in text
-    assert len(text) < 1200
-    print(text)
+    assert "📅" in text and "토 장거리" in text
+    assert "회복 러닝" in text and "🦶" in text
+    assert len(text) < 600
 
 
 def test_samsung_health_csv():

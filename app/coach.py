@@ -100,7 +100,13 @@ def rule_based_briefing(summary: dict) -> str:
     pl = planner.build_plan(summary)
     p = pl["paces"]
 
-    # 어제 평가
+    # ---- 짧은 형식: 숫자·그래프는 카드 이미지에 있으므로 글은 판단과 지시만 ----
+    d = summary["date"]
+    head = f"🏃 {int(d[5:7])}/{int(d[8:10])}({summary['weekday']}) 브리핑 · 컨디션 {ready}"
+    if r["flags"]:
+        head += f" · {r['flags'][0]}"
+
+    # 어제 한 줄
     yline = ""
     yest = summary["yesterday_runs"]
     if yest:
@@ -108,107 +114,54 @@ def rule_based_briefing(summary: dict) -> str:
         yp = planner.parse_pace(y.get("pace"))
         judge = ""
         if yp and p.get("tempo") and yp <= p["tempo"] + 5:
-            judge = " → 강도 높은 러닝이었어요. 오늘은 회복이 우선."
+            judge = " → 힘든 러닝, 오늘은 회복"
         elif yp and p.get("easy") and yp <= p["easy"] - 20:
-            judge = " → 쉬운 날치고는 빨랐어요. 편한 날은 더 느리게 뛰어도 됩니다."
-        elif yp:
-            judge = " → 편한 강도, 잘 지켰어요."
-        if y.get("avg_hr") and u.get("max_hr") and y["avg_hr"] >= u["max_hr"] * 0.9:
-            judge += f" 평균심박 {y['avg_hr']} 은 최대심박의 90% 이상이라 꽤 힘들었을 거예요."
-        hr_part = f", 평균심박 {y['avg_hr']}" if y.get("avg_hr") else ""
-        cad_part = f", 케이던스 {y['cadence']}" if y.get("cadence") else ""
-        yline = f"\n어제: {y['km']}km {y['time_min']}분 (페이스 {y['pace']}{hr_part}{cad_part}){judge}"
+            judge = " → 쉬운 날치곤 빨랐어요"
+        hr_part = f" ♥{y['avg_hr']}" if y.get("avg_hr") else ""
+        cad_part = f" 케이던스 {y['cadence']}" if y.get("cadence") else ""
+        yline = f"어제 {y['km']}km {y['pace']}{hr_part}{cad_part}{judge}"
 
-    # ---- 케이던스 섹션 (핵심 과제) ----
+    # 케이던스 두 줄
     cad = pl.get("cadence") or {}
-    cad_lines = []
+    cad_line, tip_line = "", ""
     if cad.get("avg"):
-        avg, target, prev, delta = cad["avg"], cad["target"], cad.get("prev"), cad.get("delta")
-        trend_txt = ""
-        if delta is not None:
-            trend_txt = f" (2주 전 {prev} → {'+' if delta >= 0 else ''}{delta})"
-        cad_lines.append(f"최근 2주 평균 {avg}{trend_txt} · 이번 주 목표 {target} · 최종 목표 {cad['goal']}")
-        if cad.get("yesterday"):
-            y_c = cad["yesterday"]
-            if y_c >= target:
-                cad_lines.append(f"어제 {y_c}: 목표 달성! 이 리듬을 몸에 익히는 중이에요.")
-            elif y_c >= avg:
-                cad_lines.append(f"어제 {y_c}: 평균보다 높았어요. 목표 {target}까지 {target - y_c}만 더.")
-            else:
-                cad_lines.append(f"어제 {y_c}: 평균보다 낮았어요. 피곤하면 보폭이 늘어지고 케이던스가 떨어집니다. 짧고 가볍게 딛기.")
-        status_note = {
-            "reached": "최종 목표에 도달했어요. 이제 유지하면서 페이스를 올릴 차례.",
-            "improving": "올라가는 중이에요. 이 속도면 2주마다 목표를 한 단계씩 올립니다.",
-            "dropping": "최근 2주 케이던스가 떨어졌어요. 장거리 후반이나 피로할 때 보폭이 커지는지 확인하세요.",
-            "flat": "정체 상태예요. 이번 주는 매 러닝 첫 5분을 메트로놈에 맞춰 시작해보세요.",
-        }.get(cad.get("status"), "")
-        if status_note:
-            cad_lines.append(status_note)
+        avg, target, delta = cad["avg"], cad["target"], cad.get("delta")
+        trend = f" (2주 전보다 {'+' if delta >= 0 else ''}{delta})" if delta is not None else ""
+        status = {"reached": "목표 도달, 유지", "improving": "잘 올라오는 중", "dropping": "떨어졌어요, 보폭 점검",
+                  "flat": "정체, 첫 5분은 메트로놈"}.get(cad.get("status"), "")
+        cad_line = f"🦶 케이던스 {avg}{trend} → 이번 주 목표 {target} · {status}"
         drills = [
-            "메트로놈 앱(무료)을 목표 bpm에 맞추고 발 딛는 소리를 박자에 맞추기. 처음엔 5분만, 익숙해지면 러닝 전체.",
-            "발이 몸 아래에서 착지하도록 보폭을 조금 줄이기. 속도는 그대로 두고 걸음만 잦게.",
-            "팔을 빠르게 흔들면 다리가 따라옵니다. 팔꿈치 90도, 짧고 빠르게.",
-            "쉬운 러닝 끝에 20초 스트라이드 4~6회 (케이던스 180 느낌, 전력 질주 아님).",
-            "언덕 오르막을 짧게 뛰면 자연스럽게 케이던스가 올라갑니다. 30초 × 4회.",
+            "메트로놈 앱을 목표 bpm에 맞추고 첫 5분만 박자에 맞춰 딛기",
+            "속도는 그대로, 보폭만 살짝 줄여서 발이 몸 아래에 떨어지게",
+            "팔을 짧고 빠르게 흔들면 다리가 따라와요",
+            "러닝 끝에 20초 스트라이드 4회, 180 느낌 (전력 질주 아님)",
+            "오르막 30초 × 4회, 케이던스가 저절로 올라갑니다",
         ]
-        cad_lines.append("오늘의 팁: " + drills[date_idx(summary) % len(drills)])
-    cad_text = "\n".join(cad_lines) if cad_lines else "러닝 기록에 케이던스가 아직 없어요. 단축어에 보폭 동작이 들어가면 표시됩니다."
+        tip_line = "💡 " + drills[date_idx(summary) % len(drills)]
+    else:
+        cad_line = "🦶 케이던스 기록 없음 (단축어 보폭 동작 확인)"
 
-    tips = []
-    if cad.get("avg") and cad["avg"] < cad["goal"]:
-        tips.append(f"케이던스 {cad['avg']}→{cad['goal']}이 5:30 목표의 지름길이에요. 같은 심박에서 페이스가 빨라지고 무릎·정강이 부담이 줄어듭니다.")
-    gp = planner.goal_progress_line(summary, pl)
-    if gp:
-        tips.append(gp)
-    if v["acwr"] and v["acwr"] > 1.3:
-        tips.append("이번 주 볼륨이 4주 평균보다 많이 늘었어요. 다음 주는 유지 또는 10% 줄이세요.")
-    if t["hr_per_kmh_last14"] and t["hr_per_kmh_prev14"]:
-        a, b = t["hr_per_kmh_last14"], t["hr_per_kmh_prev14"]
-        tips.append("같은 속도에서 심박이 " + ("내려가고 있어요. 유산소 효율이 좋아지는 중입니다." if a < b else "올라갔어요. 피로 누적이나 수면을 점검하세요."))
-    if v["runs_last7"] and v["longest_last28_km"] < weekly * 0.25 and weekly > 15:
-        tips.append("주간 거리 대비 장거리가 짧습니다. 주 1회 장거리를 조금씩 늘려보세요.")
-    if p.get("cur") and p.get("easy"):
-        recent = [planner.parse_pace(x.get("pace")) for x in summary.get("recent_runs", [])[:6]]
-        recent = [x for x in recent if x]
-        if len(recent) >= 4 and sum(1 for x in recent if x < p["easy"] - 30) >= len(recent) * 0.75:
-            tips.append("최근 러닝 대부분이 비슷한 중간 강도예요. 쉬운 날은 확실히 느리게, 강도 날은 확실히 빠르게 나눠야 늘어요.")
-    if not tips:
-        tips.append("꾸준함이 최고의 훈련입니다. 이번 주도 계획한 횟수를 채우는 데 집중하세요.")
+    # 남은 주 한 줄
+    week_short = " · ".join(x.replace(": ", " ") for x in pl["week_lines"] if "휴식" not in x)
+    week_line = f"📅 {week_short}" if week_short else "📅 이번 주 남은 러닝 없음"
 
-    # 전문 분석 (VDOT · 예상 기록 · 강도 분포)
-    fit = summary.get("fitness") or {}
-    analysis_lines = []
-    if fit.get("vdot"):
-        pr = fit.get("predictions") or {}
-        analysis_lines.append(f"VDOT {fit['vdot']} (기준: {fit.get('vdot_source')})")
-        analysis_lines.append(f"예상 기록: 5K {pr.get('5K')} · 10K {pr.get('10K')} · 하프 {pr.get('하프')}")
-        pz = fit.get("paces") or {}
-        analysis_lines.append(f"훈련 페이스: 쉬운 {pz.get('E_slow')}~{pz.get('E')} · 템포 {pz.get('T')} · 인터벌 {pz.get('I')}")
-    if fit.get("easy_share_28d") is not None:
-        share = fit["easy_share_28d"]
-        zone_note = ("좋은 배분이에요." if share >= 70 else
-                     "쉬운 강도가 너무 적어요. 80/20 원칙상 러닝의 70~80%는 Z1~3(편한 대화 가능)이어야 회복되면서 늘어요.")
-        analysis_lines.append(f"최근 28일 강도 분포: 쉬운 강도(Z1~3) {share}% → {zone_note}")
-    if fit.get("max_hr"):
-        z = fit.get("hr_zones") or {}
-        z2, z4 = z.get(2) or z.get("2"), z.get(4) or z.get("4")
-        if z2 and z4:
-            analysis_lines.append(f"심박 존(최대 {fit['max_hr']}): 쉬운 Z2 {z2[0]}~{z2[1]} · 템포 Z4 {z4[0]}~{z4[1]}")
-    analysis_text = "\n".join(analysis_lines) if analysis_lines else "러닝 기록이 더 쌓이면 VDOT·예상 기록이 표시됩니다."
+    # 부하 경고는 한 줄만
+    warn_line = ""
+    if v.get("acwr") and v["acwr"] > 1.3:
+        warn_line = "⚠️ 훈련량이 평소보다 많아요 → 다음 주는 유지/감량"
 
-    week = "\n".join(pl["week_lines"]) if pl["week_lines"] else "이번 주 남은 날 없음. 다음 주 계획은 월요일 브리핑에서."
-    tips_text = "\n".join(f"- {x}" for x in tips[:2])
-    load_part = f", 훈련량은 평소의 {round(v['acwr'] * 100)}%" if v.get("acwr") else ""
-    return (
-        f"🏃 {summary['date']}({summary['weekday']}) {name}님 아침 브리핑\n"
-        f"컨디션: {ready} — {reason}\n\n"
-        f"📊 지난 7일: {weekly}km / {v['runs_last7']}회 (지난주 {v['prev7_km']}km{load_part}){yline}\n\n"
-        f"🎯 오늘 훈련\n{pl['today']}\n\n"
-        f"🦶 케이던스 (핵심 과제)\n{cad_text}\n\n"
-        f"📅 이번 주 남은 일정\n{week}\n\n"
-        f"📈 분석\n{analysis_text}\n\n"
-        f"💡 보완 포인트\n{tips_text}"
-    )
+    lines = [head]
+    if yline:
+        lines.append(yline)
+    lines.append("")
+    lines.append(f"🎯 오늘: {pl['today']}")
+    lines.append(cad_line)
+    if tip_line:
+        lines.append(tip_line)
+    lines.append(week_line)
+    if warn_line:
+        lines.append(warn_line)
+    return "\n".join(lines)
 
 
 def make_briefing(user: dict, summary: dict) -> tuple[str, str]:

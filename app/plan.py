@@ -128,11 +128,11 @@ def cadence_cue(target: int | None, kind: str) -> str:
     if not target:
         return ""
     if kind in ("quality", "tempo"):
-        return f" 빠른 구간은 케이던스 {target + 3}+ 로, 조깅 구간도 {target - 5} 아래로 떨어뜨리지 않기."
+        return f" · 빠른 구간 케이던스 {target + 3}+"
     if kind == "long":
-        return f" 케이던스 {target} 유지가 오늘의 진짜 과제. 10분마다 20걸음 세어보기(=20초에 {round(target / 3)}걸음)."
+        return f" · 케이던스 {target} 끝까지 유지"
     if kind == "easy":
-        return f" 느리게 뛰되 케이던스는 {target} (메트로놈 {target}bpm 켜기). 마지막에 20초 스트라이드 4회, 케이던스 180 느낌으로."
+        return f" · 케이던스 {target} (메트로놈 {target}bpm)"
     return ""
 
 
@@ -140,25 +140,23 @@ def session_text(kind: str, summary: dict, p: dict, goal: dict, today: date) -> 
     weekly = summary["volume"]["last7_km"] or 0
     base = max(weekly, 12)  # 볼륨이 아주 적어도 최소 처방
     if kind == "rest":
-        return "휴식. 가벼운 스트레칭이나 20분 걷기까지만."
+        return "휴식 · 스트레칭이나 20분 걷기까지만"
     if kind == "easy":
         km = round(min(max(base * 0.18, 4), 10))
-        return f"쉬운 러닝 {km}km · 페이스 {pace_str(p['easy'])} 전후 (대화 가능한 강도). 워밍업 걷기 3분, 마지막에 스트레칭 5분."
+        return f"쉬운 러닝 {km}km · {pace_str(p['easy'])} 전후 (대화 가능한 강도)"
     if kind == "long":
         km = round(min(max(base * 0.3, 6), 18))
-        return f"장거리 {km}km · 페이스 {pace_str(p['long'])} 로 일정하게. 후반 2km 만 {pace_str(p['long'] - 15)} 로 살짝 올려도 좋습니다."
+        return f"장거리 {km}km · {pace_str(p['long'])} 일정하게 · 마지막 2km 만 살짝"
     if kind == "tempo" or (kind == "quality" and _week_index(today) % 2 == 0):
         # 목표가 "일정 페이스로 N분" 이면 그 페이스로 유지 시간을 점진적으로 늘린다
         if goal.get("pace_s") and goal.get("duration_s"):
             step = (_week_index(today) // 2) % 4
             mins = [15, 20, 25, 30][step]
-            return (f"템포 러닝: 워밍업 조깅 10분 + {mins}분 {pace_str(p['tempo'])} 유지 + 쿨다운 10분. "
-                    f"목표 {pace_str(goal['pace_s'])} 로 {round(goal['duration_s'] / 60)}분 달리기를 향해 유지 시간을 늘려가는 단계입니다.")
-        return f"템포 러닝: 워밍업 10분 + 20분 {pace_str(p['tempo'])} 유지 + 쿨다운 10분. '숨차지만 20분은 버틸 수 있는' 강도."
+            return f"템포 · 워밍업 10분 + {mins}분 {pace_str(p['tempo'])} 유지 + 쿨다운 10분"
+        return f"템포 · 워밍업 10분 + 20분 {pace_str(p['tempo'])} 유지 + 쿨다운 10분"
     # quality (인터벌)
     reps = 4 if base < 25 else (5 if base < 40 else 6)
-    return (f"인터벌: 워밍업 10분 + (1km {pace_str(p['interval'])} + 2분 조깅) × {reps} + 쿨다운 10분. "
-            f"마지막 반복도 첫 반복과 같은 페이스로 끝내는 게 목표.")
+    return f"인터벌 · 워밍업 10분 + (1km {pace_str(p['interval'])} + 2분 조깅)×{reps} + 쿨다운 10분"
 
 
 def build_plan(summary: dict) -> dict:
@@ -179,15 +177,15 @@ def build_plan(summary: dict) -> dict:
     if kind in ("quality", "tempo") and y_hard:
         kind = "easy"
     if readiness == "rest":
-        today_text, kind = "휴식 또는 20~30분 가벼운 걷기. 회복 지표(안정심박·HRV)가 평소로 돌아오면 내일 쉬운 러닝부터 재개.", "rest"
+        today_text, kind = "휴식 · 회복 지표가 돌아오면 내일 쉬운 러닝부터", "rest"
     elif not p["cur"] or few_data:
-        today_text = "쉬운 러닝 30~40분, 대화 가능한 페이스(최대심박 65~75%). 아직 기준선을 쌓는 중이라 강도는 올리지 않습니다."
+        today_text = "쉬운 러닝 30~40분 · 대화 가능한 페이스 (기록 쌓는 중)"
     elif readiness == "caution":
         if kind == "rest":
             today_text = session_text("rest", summary, p, goal, today)
         else:
             km = round(min(max((summary["volume"]["last7_km"] or 12) * 0.12, 3), 6))
-            today_text = f"회복 러닝 {km}km · 페이스 {pace_str(p['easy'] + 15)} 이하로 아주 편하게. 강도 세션은 컨디션 회복 후로 미룹니다."
+            today_text = f"회복 러닝 {km}km · {pace_str(p['easy'] + 15)} 이하로 아주 편하게"
             kind = "easy"
     else:
         if kind == "rest" and days_since is not None and days_since >= 4:
