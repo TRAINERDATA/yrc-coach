@@ -347,6 +347,10 @@ def parse_hourly(payload: dict) -> list:
     # 케이던스 재료: 달리기 보폭 길이(m, 시간별 평균) 또는 걸음 수(시간별 합계)
     stride = table("stride", lambda v: (_num(v) / 100 if _units(v) == "cm" else _num(v)))
     steps = table("steps", _num)
+    # 'steps' 로 보냈지만 값이 0.5~2.5 면 보폭 길이(m) 를 잘못 이름 붙인 것 → 보폭으로 처리
+    if steps and max(steps.values()) < 5:
+        stride = {**stride, **steps}
+        steps = {}
     energy = table("energy", lambda v: (_num(v) / 4.184 if _units(v) in ("kj", "kilojoule", "kilojoules") else _num(v)))
     # 수영: 수영 거리(m, 시간별 합계, Watch) · 스트로크 수(시간별 합계)
     swim = table("swim", lambda v: (_num(v) * 1000 if _units(v) == "km" else (_num(v) * 0.9144 if _units(v) in ("yd", "yard", "yards") else _num(v))))
@@ -396,7 +400,7 @@ def parse_hourly(payload: dict) -> list:
             strides = [stride[k] for k in hours if stride.get(k) and 0.8 <= stride[k] <= 1.6]
             if strides:
                 cadence = round(v * 1000 / 60 / (sum(strides) / len(strides)))
-        if cadence and not 120 <= cadence <= 220:
+        if not cadence or not 120 <= cadence <= 220:
             cadence = None
         kcal = sum(energy.get(k, 0) for k in hours) or None
         start = parse_dt(hours[0])
