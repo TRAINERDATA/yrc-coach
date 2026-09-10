@@ -54,15 +54,24 @@ def health():
 @app.post("/ingest/{token}")
 async def ingest_data(token: str, request: Request):
     user = _user_or_404(token)
+    import time as _t
+    from datetime import datetime as _dt
+    # 요청 도착 흔적을 먼저 남긴다 (본문 수신 중 끊기면 이 상태가 남아 원인 추적 가능)
+    db.save_raw_payload(user["id"], {"_status": "started", "_at": _dt.now().isoformat(timespec="seconds"),
+                                     "_content_length": request.headers.get("content-length"), "_ua": request.headers.get("user-agent", "")[:80]})
+    t0 = _t.time()
     body = await request.body()
+    t_body = _t.time() - t0
     payload = ingest.parse_body(body)
+    if isinstance(payload, dict):
+        payload["_recv"] = {"bytes": len(body), "body_seconds": round(t_body, 1)}
     if not isinstance(payload, dict):
         raise HTTPException(400, "JSON object or ##section text expected")
     workouts, metrics = ingest.parse_payload(payload)
     nw = db.upsert_workouts(user["id"], workouts)
     nm = db.upsert_metrics(user["id"], metrics)
     db.save_raw_payload(user["id"], payload)  # 단축어 디버깅용 (마지막 1건만 보관)
-    log.info("ingest %s: %d workouts, %d metric-days", user["name"], nw, nm)
+    log.info("ingest %s: %d workouts, %d metric-days, %d bytes in %.1fs (parse %.1fs)", user["name"], nw, nm, len(body), t_body, _t.time() - t0 - t_body)
     return {"ok": True, "workouts": nw, "metric_days": nm,
             "runs": [{"start": w["start"], "km": w["distance_km"]} for w in workouts[-5:]],
             "hourly_hours": ingest.hourly_counts(payload)}
