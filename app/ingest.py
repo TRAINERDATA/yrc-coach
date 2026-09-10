@@ -477,7 +477,11 @@ def parse_body(body: bytes):
     for line in text.splitlines():
         s = line.strip()
         if s.startswith("##"):
-            current = s[2:].strip().lower()
+            # 키 정규화: 공백 제거, 오타 허용 (energy_ dates → energy_dates, energy_value → energy_values)
+            key = re.sub(r"\s+", "", s[2:].lower())
+            key = re.sub(r"_date$", "_dates", key)
+            key = re.sub(r"_value$", "_values", key)
+            current = key
             sections[current] = []
         elif current and s:
             sections[current].append(s)
