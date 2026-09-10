@@ -144,6 +144,9 @@ async def upload_file(token: str, request: Request):
 @app.get("/brief/{token}/json")
 def brief_json(token: str):
     user = _user_or_404(token)
+    if (user.get("sport") or "run") == "swim":
+        from . import swim
+        return swim.build_summary(user)
     from . import analysis
     return analysis.build_summary(user)
 
@@ -153,14 +156,18 @@ def brief_card(token: str):
     from fastapi.responses import Response
     from . import analysis, charts
     user = _user_or_404(token)
-    png = charts.render_card(analysis.build_summary(user))
+    if (user.get("sport") or "run") == "swim":
+        from . import charts_swim, swim
+        png = charts_swim.render_card(swim.build_summary(user))
+    else:
+        png = charts.render_card(analysis.build_summary(user))
     return Response(content=png, media_type="image/png", headers={"Cache-Control": "no-store"})
 
 
 @app.post("/brief/{token}/run")
-def brief_run(token: str, send: bool = True):
+def brief_run(token: str, send: bool = True, mode: str = "morning"):
     user = _user_or_404(token)
-    res = pipeline.run_for_user(user, send=send, force=True)
+    res = pipeline.run_for_user(user, send=send, force=True, mode=mode)
     res.pop("summary", None)
     return res
 

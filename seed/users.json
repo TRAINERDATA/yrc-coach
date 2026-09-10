@@ -7,7 +7,10 @@
   "sport": "run",
   "age": 28,
   "goal": "5:30 페이스로 1시간 연속 달리기",
-  "weekly_days": 5
+  "weekly_days": 5,
+  "weight_kg": 94,
+  "height_cm": 176,
+  "sex": "M"
  },
  {
   "name": "김창희",
@@ -18,6 +21,12 @@
   "age": 28,
   "goal": "체중 감량 + 유산소 (아침·저녁 수영)",
   "weekly_days": 6,
-  "activity": "sedentary"
+  "activity": "sedentary",
+  "weight_kg": 94,
+  "height_cm": 176,
+  "sex": "M",
+  "target_weight_kg": 82,
+  "diet_notes": "점심 구내식당 약 1000kcal 고정. 수영 초보(처음 시작). 아침·저녁 1시간씩",
+  "notes": "수영 초보. 자유형+평영 혼합. 체중 감량 목적"
  }
 ]

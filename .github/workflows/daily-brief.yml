@@ -6,6 +6,7 @@ on:
   schedule:
     - cron: "0 23 * * *"
     - cron: "25 23 * * *"
+    - cron: "45 13 * * *"   # 22:45 KST 저녁 수영 브리핑
   workflow_dispatch:
     inputs:
       mode:
@@ -19,12 +20,14 @@ jobs:
     env:
       BASE: https://yrc-coach.onrender.com
       TOKENS: ${{ vars.BRIEF_TOKENS || 'xlrAjA7X0A_OPm2OBakS8tof,WkD0Ly9B0eqW5tvsAa19sOUT' }}
+      EVENING_TOKENS: ${{ vars.EVENING_TOKENS || 'WkD0Ly9B0eqW5tvsAa19sOUT' }}
     steps:
       - name: Decide mode
         id: mode
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "mode=${{ github.event.inputs.mode }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event.schedule }}" = "0 23 * * *" ]; then echo "mode=wake" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.schedule }}" = "45 13 * * *" ]; then echo "mode=evening" >> $GITHUB_OUTPUT
           else echo "mode=brief" >> $GITHUB_OUTPUT; fi
 
       - name: Wake server (retry until healthy)
@@ -38,13 +41,14 @@ jobs:
           echo "server did not wake"; exit 1
 
       - name: Send briefings
-        if: steps.mode.outputs.mode == 'brief'
+        if: steps.mode.outputs.mode == 'brief' || steps.mode.outputs.mode == 'evening'
         run: |
           fail=0
-          for t in $(echo "$TOKENS" | tr ',' ' '); do
+          if [ "${{ steps.mode.outputs.mode }}" = "evening" ]; then LIST="$EVENING_TOKENS"; Q="?mode=evening"; else LIST="$TOKENS"; Q=""; fi
+          for t in $(echo "$LIST" | tr ',' ' '); do
             ok=0
             for i in 1 2 3; do
-              out=$(curl -s -m 170 -X POST "$BASE/brief/$t/run" || true)
+              out=$(curl -s -m 170 -X POST "$BASE/brief/$t/run$Q" || true)
               echo "[$t] try $i: $(echo "$out" | head -c 200)"
               if echo "$out" | grep -q '"delivered":true'; then ok=1; break; fi
               sleep 30

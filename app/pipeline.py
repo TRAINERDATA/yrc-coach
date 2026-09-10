@@ -9,11 +9,12 @@ from . import analysis, coach, db, notify, strava
 log = logging.getLogger(__name__)
 
 
-def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
+def run_for_user(user: dict, send: bool = True, force: bool = False, mode: str = "morning") -> dict:
     from . import config
     today = config.local_today().isoformat()
+    key = today if mode == "morning" else f"{today}-{mode}"
     existing = db.latest_briefing(user["id"])
-    if existing and existing["date"] == today and not force:
+    if existing and existing["date"] == key and not force:
         return {"user": user["name"], "skipped": True, "reason": "already briefed today"}
 
     try:
@@ -24,7 +25,7 @@ def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
     if (user.get("sport") or "run") == "swim":
         from . import charts_swim, swim
         summary = swim.build_summary(user)
-        text, generator = swim.briefing_text(summary), "rules-swim"
+        text, generator = swim.briefing_text(summary, mode=mode), "rules-swim"
         try:
             png = charts_swim.render_card(summary)
         except Exception as e:  # noqa: BLE001
@@ -43,7 +44,7 @@ def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
             delivered = notify.deliver(user, text, png=png)
         except Exception as e:  # noqa: BLE001
             log.exception("delivery failed for %s: %s", user["name"], e)
-    db.save_briefing(user["id"], today, summary, text, user.get("channel"), delivered)
+    db.save_briefing(user["id"], key, summary, text, user.get("channel"), delivered)
     return {"user": user["name"], "generator": generator, "delivered": delivered, "text": text, "summary": summary}
 
 
