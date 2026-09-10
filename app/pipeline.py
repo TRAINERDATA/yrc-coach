@@ -20,14 +20,23 @@ def run_for_user(user: dict, send: bool = True, force: bool = False) -> dict:
         strava.sync(user)
     except Exception as e:  # noqa: BLE001
         log.warning("strava sync failed for %s: %s", user["name"], e)
-    summary = analysis.build_summary(user)
-    text, generator = coach.make_briefing(user, summary)
     png = None
-    try:
-        from . import charts
-        png = charts.render_card(summary)
-    except Exception as e:  # noqa: BLE001
-        log.warning("chart render failed for %s: %s", user["name"], e)
+    if (user.get("sport") or "run") == "swim":
+        from . import charts_swim, swim
+        summary = swim.build_summary(user)
+        text, generator = swim.briefing_text(summary), "rules-swim"
+        try:
+            png = charts_swim.render_card(summary)
+        except Exception as e:  # noqa: BLE001
+            log.warning("swim chart render failed for %s: %s", user["name"], e)
+    else:
+        summary = analysis.build_summary(user)
+        text, generator = coach.make_briefing(user, summary)
+        try:
+            from . import charts
+            png = charts.render_card(summary)
+        except Exception as e:  # noqa: BLE001
+            log.warning("chart render failed for %s: %s", user["name"], e)
     delivered = False
     if send:
         try:

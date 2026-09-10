@@ -210,3 +210,23 @@ def test_cadence_from_stride_and_steps():
     p["hourly"]["steps_dates"] = "2026-09-08T20:00:00+09:00"; p["hourly"]["steps_values"] = "5200 걸음"
     w, _ = ingest.parse_payload(p)
     assert w[0]["cadence"] == round(5200 / (w[0]["duration_s"] / 60))
+
+
+def test_swim_pipeline_and_diet():
+    from app import swim
+    from datetime import date, datetime, timedelta
+    u = db.add_user("수영테스트", "none", sport="swim", age=28, weight_kg=78, height_cm=175, sex="M", target_weight_kg=72, activity="sedentary")
+    today = date.today()
+    rows = []
+    for i in (1, 2, 3, 8, 9, 15, 16):
+        st = datetime.combine(today - timedelta(days=i), datetime.min.time()).replace(hour=19)
+        rows.append({"start": st.isoformat(timespec="seconds"), "end": (st + timedelta(minutes=30)).isoformat(timespec="seconds"),
+                     "duration_s": 1800, "distance_km": 1.0, "avg_hr": 135, "sport": "swim", "strokes": 840, "energy_kcal": 300, "source": "demo", "raw": {}})
+    db.upsert_workouts(u["id"], rows)
+    assert db.workouts_since(u["id"], 60, sport="run") == []
+    s = swim.build_summary(u)
+    assert s["volume"]["last7_m"] == 3000 and s["recent_sessions"][0]["pace100"] == "3'00\"" and s["recent_sessions"][0]["spl"] == 21.0
+    d = swim.diet_plan(s)
+    assert d["personalized"] and 1400 <= d["target_kcal"] <= 2600 and d["protein_g"] == 125 and d["to_goal_kg"] == 6.0
+    text = swim.briefing_text(s)
+    assert "🏊" in text and "🍽" in text and "효율" in text and len(text) < 900

@@ -22,7 +22,9 @@ from . import config, db, ingest, notify, pipeline
 
 def cmd_add_user(a):
     fields = {k: v for k, v in dict(telegram_chat_id=a.chat_id, ntfy_topic=a.ntfy_topic, goal=a.goal,
-                                   age=a.age, max_hr=a.max_hr, weekly_days=a.weekly_days, notes=a.notes).items() if v is not None}
+                                   age=a.age, max_hr=a.max_hr, weekly_days=a.weekly_days, notes=a.notes,
+                                   sport=a.sport, weight_kg=a.weight_kg, height_cm=a.height_cm, sex=a.sex,
+                                   target_weight_kg=a.target_weight_kg, activity=a.activity, diet_notes=a.diet_notes).items() if v is not None}
     u = db.add_user(a.name, a.channel, token=a.token, **fields)
     print(f"사용자 추가됨: id={u['id']} name={u['name']} channel={u['channel']}")
     print(f"  데이터 전송 URL (Health Auto Export / 단축어에 넣기):\n  {config.PUBLIC_BASE_URL}/ingest/{u['token']}")
@@ -38,7 +40,7 @@ def cmd_users(a):
 def cmd_export_seed(a):
     """Render 환경변수 SEED_USERS 에 넣을 JSON 출력 (DB 초기화 대비)."""
     keys = ("name", "token", "channel", "telegram_chat_id", "ntfy_topic", "age", "max_hr", "goal", "weekly_days", "notes",
-            "strava_refresh_token")
+            "strava_refresh_token", "sport", "weight_kg", "height_cm", "sex", "target_weight_kg", "activity", "diet_notes")
     users = [{k: u[k] for k in keys if u.get(k) is not None} for u in db.list_users()]
     print(json.dumps(users, ensure_ascii=False, separators=(",", ":")))
 
@@ -46,7 +48,8 @@ def cmd_export_seed(a):
 def cmd_set_user(a):
     fields = {k: v for k, v in dict(channel=a.channel, telegram_chat_id=a.chat_id, ntfy_topic=a.ntfy_topic, goal=a.goal,
                                    age=a.age, max_hr=a.max_hr, weekly_days=a.weekly_days, notes=a.notes,
-                                   active=a.active).items() if v is not None}
+                                   active=a.active, sport=a.sport, weight_kg=a.weight_kg, height_cm=a.height_cm, sex=a.sex,
+                                   target_weight_kg=a.target_weight_kg, activity=a.activity, diet_notes=a.diet_notes).items() if v is not None}
     db.update_user(a.user_id, **fields)
     print("수정됨:", db.get_user(a.user_id))
 
@@ -191,6 +194,10 @@ def main(argv=None):
         q.add_argument("--chat-id"); q.add_argument("--ntfy-topic"); q.add_argument("--goal")
         q.add_argument("--age", type=int); q.add_argument("--max-hr", type=int)
         q.add_argument("--weekly-days", type=int); q.add_argument("--notes")
+        q.add_argument("--sport", choices=["run", "swim"]); q.add_argument("--weight", type=float, dest="weight_kg")
+        q.add_argument("--height", type=float, dest="height_cm"); q.add_argument("--sex", choices=["M", "F"])
+        q.add_argument("--target-weight", type=float, dest="target_weight_kg")
+        q.add_argument("--activity", choices=["sedentary", "light", "active"]); q.add_argument("--diet-notes")
 
     q = sp.add_parser("add-user"); q.add_argument("--name", required=True); q.add_argument("--token", help="기존 토큰 재사용 (DB 초기화 후 복구용)")
     user_fields(q); q.set_defaults(channel="telegram", fn=cmd_add_user)

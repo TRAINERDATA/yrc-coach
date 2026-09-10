@@ -75,13 +75,20 @@ CREATE TABLE IF NOT EXISTS briefings (
 """
 
 # 나중에 추가된 컬럼 (기존 DB 는 init() 에서 ALTER 로 보강)
-EXTRA_WORKOUT_COLUMNS = {"cadence": "REAL"}
+EXTRA_WORKOUT_COLUMNS = {"cadence": "REAL", "sport": "TEXT", "strokes": "REAL"}
 
 EXTRA_USER_COLUMNS = {
     "strava_athlete_id": "TEXT",
     "strava_access_token": "TEXT",
     "strava_refresh_token": "TEXT",
     "strava_expires_at": "INTEGER",
+    "sport": "TEXT",            # run | swim
+    "weight_kg": "REAL",
+    "height_cm": "REAL",
+    "sex": "TEXT",              # M | F
+    "target_weight_kg": "REAL",
+    "diet_notes": "TEXT",       # 알레르기, 싫어하는 음식, 식사 여건
+    "activity": "TEXT",         # sedentary | light | active
 }
 
 USER_FIELDS = {"name", "token", "channel", "telegram_chat_id", "kakao_access_token", "kakao_refresh_token",
@@ -162,6 +169,12 @@ def init():
     import logging
     log = logging.getLogger(__name__)
     try:
+        n = seed_users_from_file()
+        if n:
+            log.info("seeded %d users from seed/users.json", n)
+    except Exception as e:  # noqa: BLE001
+        log.error("seed users file failed: %s", e)
+    try:
         n = seed_users_from_env()
         if n:
             log.info("seeded %d users from SEED_USERS", n)
@@ -223,6 +236,20 @@ def seed_history_from_file(path: str = None) -> int:
     return n
 
 
+def seed_users_from_file(path: str = None) -> int:
+    """seed/users.json (저장소 안, 비공개) 의 사용자 목록을 (재)적재. SEED_USERS 환경변수보다 먼저 적용."""
+    import os
+    from pathlib import Path
+    p = Path(path or os.getenv("SEED_USERS_FILE", "seed/users.json"))
+    if not p.exists():
+        return 0
+    n = 0
+    for spec in json.loads(p.read_text(encoding="utf-8")):
+        upsert_user_by_token(spec)
+        n += 1
+    return n
+
+
 def seed_users_from_env():
     """SEED_USERS='[{"name":"...","token":"...","telegram_chat_id":"..."}]' 환경변수로 사용자 복구."""
     import os
@@ -269,17 +296,17 @@ def upsert_workouts(user_id: int, rows: Iterable[dict]) -> int:
         for w in rows:
             c.execute(
                 """INSERT INTO workouts
-                   (user_id,start,"end",duration_s,distance_km,avg_hr,max_hr,energy_kcal,elev_gain_m,cadence,source,raw)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                   (user_id,start,"end",duration_s,distance_km,avg_hr,max_hr,energy_kcal,elev_gain_m,cadence,sport,strokes,source,raw)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(user_id,start) DO UPDATE SET
                      "end"=excluded."end", duration_s=excluded.duration_s, distance_km=excluded.distance_km,
                      avg_hr=COALESCE(excluded.avg_hr,workouts.avg_hr), max_hr=COALESCE(excluded.max_hr,workouts.max_hr),
                      energy_kcal=COALESCE(excluded.energy_kcal,workouts.energy_kcal),
-                     elev_gain_m=COALESCE(excluded.elev_gain_m,workouts.elev_gain_m), cadence=COALESCE(excluded.cadence,workouts.cadence), source=excluded.source, raw=excluded.raw""",
+                     elev_gain_m=COALESCE(excluded.elev_gain_m,workouts.elev_gain_m), cadence=COALESCE(excluded.cadence,workouts.cadence), sport=excluded.sport, strokes=COALESCE(excluded.strokes,workouts.strokes), source=excluded.source, raw=excluded.raw""",
                 (
                     user_id, w["start"], w.get("end"), w.get("duration_s"), w.get("distance_km"),
                     w.get("avg_hr"), w.get("max_hr"), w.get("energy_kcal"), w.get("elev_gain_m"), w.get("cadence"),
-                    w.get("source", "health_auto_export"), json.dumps(w.get("raw"), ensure_ascii=False),
+                    w.get("sport") or "run", w.get("strokes"), w.get("source", "health_auto_export"), json.dumps(w.get("raw"), ensure_ascii=False),
                 ),
             )
             n += 1
@@ -293,9 +320,13 @@ def upsert_workouts(user_id: int, rows: Iterable[dict]) -> int:
     return n
 
 
-def workouts_since(user_id: int, days: int) -> list:
+def workouts_since(user_id: int, days: int, sport: str = "run") -> list:
     since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%dT00:00:00")
     with conn() as c:
+        if sport:
+            return [dict(r) for r in c.execute(
+                "SELECT * FROM workouts WHERE user_id=? AND start>=? AND COALESCE(sport,'run')=? ORDER BY start",
+                (user_id, since, sport))]
         return [dict(r) for r in c.execute(
             "SELECT * FROM workouts WHERE user_id=? AND start>=? ORDER BY start", (user_id, since))]
 

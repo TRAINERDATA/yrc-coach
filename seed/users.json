@@ -1,0 +1,23 @@
+[
+ {
+  "name": "김창희",
+  "token": "xlrAjA7X0A_OPm2OBakS8tof",
+  "channel": "telegram",
+  "telegram_chat_id": "8879418623",
+  "sport": "run",
+  "age": 28,
+  "goal": "5:30 페이스로 1시간 연속 달리기",
+  "weekly_days": 5
+ },
+ {
+  "name": "김창희",
+  "token": "WkD0Ly9B0eqW5tvsAa19sOUT",
+  "channel": "telegram",
+  "telegram_chat_id": "8879418623",
+  "sport": "swim",
+  "age": 28,
+  "goal": "체중 감량 + 유산소 (아침·저녁 수영)",
+  "weekly_days": 6,
+  "activity": "sedentary"
+ }
+]

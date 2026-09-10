@@ -347,6 +347,11 @@ def parse_hourly(payload: dict) -> list:
     # 케이던스 재료: 달리기 보폭 길이(m, 시간별 평균) 또는 걸음 수(시간별 합계)
     stride = table("stride", lambda v: (_num(v) / 100 if _units(v) == "cm" else _num(v)))
     steps = table("steps", _num)
+    energy = table("energy", lambda v: (_num(v) / 4.184 if _units(v) in ("kj", "kilojoule", "kilojoules") else _num(v)))
+    # 수영: 수영 거리(m, 시간별 합계, Watch) · 스트로크 수(시간별 합계)
+    swim = table("swim", lambda v: (_num(v) * 1000 if _units(v) == "km" else (_num(v) * 0.9144 if _units(v) in ("yd", "yard", "yards") else _num(v))))
+    strokes = table("strokes", _num)
+    payload.setdefault("_swim", {"swim": swim, "strokes": strokes, "hr_samples": hr_samples, "hr_raw_mode": hr_raw_mode, "energy": energy})
 
     run_hours = sorted(k for k, v in speed.items() if v >= 5.5)
     runs, block = [], []
@@ -393,15 +398,59 @@ def parse_hourly(payload: dict) -> list:
                 cadence = round(v * 1000 / 60 / (sum(strides) / len(strides)))
         if cadence and not 120 <= cadence <= 220:
             cadence = None
+        kcal = sum(energy.get(k, 0) for k in hours) or None
         start = parse_dt(hours[0])
         out.append({
             "start": start.isoformat(timespec="seconds"),
             "end": (start + timedelta(seconds=dur)).isoformat(timespec="seconds"),
             "duration_s": round(dur), "distance_km": round(d_km, 3),
-            "avg_hr": avg_hr, "max_hr": max_hr, "cadence": cadence,
-            "energy_kcal": None, "elev_gain_m": None, "source": "shortcut_hourly",
+            "avg_hr": avg_hr, "max_hr": max_hr, "cadence": cadence, "sport": "run",
+            "energy_kcal": round(kcal) if kcal else None, "elev_gain_m": None, "source": "shortcut_hourly",
             "raw": {"hours": hours, "speed_kmh": round(v, 2), "method": method, "hr_samples": len(samples),
                     "hourly_distance_sum": round(d_sum, 2), "note": "단축어 시간별 샘플로 복원"},
+        })
+    return out
+
+
+def parse_swim_hourly(payload: dict) -> list:
+    """수영 세션 복원: 수영 거리가 있는 시간대 = 수영. 시간은 심박 샘플 수 × 4.5초, 스트로크·칼로리는 그 시간대 합계."""
+    if "_swim" not in payload:
+        parse_hourly(payload)  # 시간별 표를 채운다
+    sw = payload.get("_swim") or {}
+    swim, strokes, energy = sw.get("swim") or {}, sw.get("strokes") or {}, sw.get("energy") or {}
+    hr_samples, raw_mode = sw.get("hr_samples") or {}, sw.get("hr_raw_mode")
+    hours_all = sorted(k for k, v in swim.items() if v >= 100)
+    blocks, blk = [], []
+    for k in hours_all:
+        if blk and (parse_dt(k) - parse_dt(blk[-1])).total_seconds() > 3600:
+            blocks.append(blk)
+            blk = []
+        blk.append(k)
+    if blk:
+        blocks.append(blk)
+    out = []
+    for hours in blocks:
+        meters = sum(swim.get(k, 0) for k in hours)
+        if meters < 100:
+            continue
+        samples = [x for k in hours for x in hr_samples.get(k, [])] if raw_mode else []
+        if len(samples) >= 30:
+            dur = len(samples) * HR_SAMPLE_INTERVAL_S
+            avg_hr, max_hr, method = round(sum(samples) / len(samples), 1), max(samples), "hr_samples"
+        else:
+            dur = meters / 100 * 150  # 심박 없으면 100m 2:30 가정
+            avg_hr, max_hr, method = None, None, "assumed_pace"
+        st = sum(strokes.get(k, 0) for k in hours) or None
+        kcal = sum(energy.get(k, 0) for k in hours) or None
+        start = parse_dt(hours[0])
+        out.append({
+            "start": start.isoformat(timespec="seconds"),
+            "end": (start + timedelta(seconds=dur)).isoformat(timespec="seconds"),
+            "duration_s": round(dur), "distance_km": round(meters / 1000, 3),
+            "avg_hr": avg_hr, "max_hr": max_hr, "cadence": None, "sport": "swim",
+            "strokes": round(st) if st else None, "energy_kcal": round(kcal) if kcal else None, "elev_gain_m": None,
+            "source": "shortcut_hourly",
+            "raw": {"hours": hours, "method": method, "hr_samples": len(samples), "meters": round(meters)},
         })
     return out
 
@@ -443,7 +492,7 @@ def hourly_counts(payload: dict) -> dict:
     if not isinstance(h, dict):
         return {}
     counts = {}
-    for name in ("speed", "distance", "hr", "stride", "steps"):
+    for name in ("speed", "distance", "hr", "stride", "steps", "swim", "strokes", "energy"):
         raw = h.get(name) or h.get(f"{name}_dates") or []
         if isinstance(raw, (dict, str)):
             raw = [raw]
@@ -460,5 +509,6 @@ def hourly_counts(payload: dict) -> dict:
 
 
 def parse_payload(payload: dict):
-    workouts = parse_workouts(payload) + parse_hourly(payload)
+    workouts = parse_workouts(payload) + parse_hourly(payload) + parse_swim_hourly(payload)
+    payload.pop("_swim", None)
     return workouts, parse_metrics(payload)

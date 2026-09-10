@@ -156,7 +156,7 @@ def rule_based_briefing(summary: dict) -> str:
     lines.append("")
     lines.append(f"🎯 오늘: {pl['today']}")
     lines.append(cad_line)
-    if tip_line:
+    if tip_line and pl.get("today_kind") != "rest":
         lines.append(tip_line)
     lines.append(week_line)
     if warn_line:

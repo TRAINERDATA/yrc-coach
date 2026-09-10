@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 15
     env:
       BASE: https://yrc-coach.onrender.com
-      TOKENS: ${{ vars.BRIEF_TOKENS || 'xlrAjA7X0A_OPm2OBakS8tof' }}
+      TOKENS: ${{ vars.BRIEF_TOKENS || 'xlrAjA7X0A_OPm2OBakS8tof,WkD0Ly9B0eqW5tvsAa19sOUT' }}
     steps:
       - name: Decide mode
         id: mode
