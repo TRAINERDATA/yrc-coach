@@ -178,9 +178,15 @@ def brief_card(token: str):
 
 
 @app.post("/brief/{token}/run")
-def brief_run(token: str, send: bool = True, mode: str = "morning", force: bool = False):
-    """오늘 이미 보냈으면 건너뜀 (중복 방지). 다시 보내려면 ?force=true"""
+def brief_run(token: str, send: bool = True, mode: str = "auto", force: bool = False):
+    """오늘 이미 보냈으면 건너뜀 (중복 방지). 다시 보내려면 ?force=true
+    mode=auto: 수영 사용자는 17시 이후 호출이면 저녁 브리핑, 그 외는 아침 브리핑 (단축어가 업로드 직후 호출하는 용도)"""
     user = _user_or_404(token)
+    if mode == "auto":
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        hour = datetime.now(ZoneInfo(config.TZ)).hour
+        mode = "evening" if ((user.get("sport") or "run") == "swim" and hour >= 17) else "morning"
     res = pipeline.run_for_user(user, send=send, force=force, mode=mode)
     res.pop("summary", None)
     return res
