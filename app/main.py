@@ -28,10 +28,14 @@ log = logging.getLogger("yrc")
 async def lifespan(app: FastAPI):
     db.init()
     sched = BackgroundScheduler(timezone=config.TZ)
+    # 서버가 깨어 있으면(UptimeRobot 등으로 5분마다 ping) 내부 스케줄러가 직접 브리핑을 보낸다. GitHub Actions 는 백업.
     sched.add_job(lambda: pipeline.run_all(send=True), CronTrigger(hour=config.BRIEF_HOUR, minute=config.BRIEF_MINUTE),
-                  id="morning_brief", misfire_grace_time=3600)
+                  id="morning_brief", misfire_grace_time=1800)
+    sched.add_job(lambda: pipeline.run_evening(send=True), CronTrigger(hour=config.EVENING_HOUR, minute=config.EVENING_MINUTE),
+                  id="evening_brief", misfire_grace_time=1800)
     sched.start()
-    log.info("scheduler started: daily %02d:%02d %s", config.BRIEF_HOUR, config.BRIEF_MINUTE, config.TZ)
+    log.info("scheduler started: morning %02d:%02d, evening %02d:%02d %s", config.BRIEF_HOUR, config.BRIEF_MINUTE,
+             config.EVENING_HOUR, config.EVENING_MINUTE, config.TZ)
     yield
     sched.shutdown(wait=False)
 
@@ -174,9 +178,10 @@ def brief_card(token: str):
 
 
 @app.post("/brief/{token}/run")
-def brief_run(token: str, send: bool = True, mode: str = "morning"):
+def brief_run(token: str, send: bool = True, mode: str = "morning", force: bool = False):
+    """오늘 이미 보냈으면 건너뜀 (중복 방지). 다시 보내려면 ?force=true"""
     user = _user_or_404(token)
-    res = pipeline.run_for_user(user, send=send, force=True, mode=mode)
+    res = pipeline.run_for_user(user, send=send, force=force, mode=mode)
     res.pop("summary", None)
     return res
 

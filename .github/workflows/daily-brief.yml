@@ -51,7 +51,7 @@ jobs:
             for i in 1 2 3; do
               out=$(curl -s -m 170 -X POST "$BASE/brief/$t/run$Q" || true)
               echo "[$t] try $i: $(echo "$out" | head -c 200)"
-              if echo "$out" | grep -q '"delivered":true'; then ok=1; break; fi
+              if echo "$out" | grep -q -E '"delivered":true|"skipped":true'; then ok=1; break; fi
               sleep 30
             done
             [ $ok = 1 ] || fail=1

@@ -57,3 +57,17 @@ def run_all(send: bool = True) -> list:
             log.exception("briefing failed for %s", u["name"])
             results.append({"user": u["name"], "error": str(e)})
     return results
+
+
+def run_evening(send: bool = True) -> list:
+    """저녁 브리핑: 수영 사용자만 (오늘 결과 + 내일 계획·식단)."""
+    results = []
+    for u in db.list_users():
+        if (u.get("sport") or "run") != "swim":
+            continue
+        try:
+            results.append(run_for_user(u, send=send, mode="evening"))
+        except Exception as e:  # noqa: BLE001
+            log.exception("evening briefing failed for %s", u["name"])
+            results.append({"user": u["name"], "error": str(e)})
+    return results

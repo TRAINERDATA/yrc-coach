@@ -15,8 +15,10 @@ os.environ.update({k: _clean(os.environ[k]) for k in (
 
 DB_PATH = os.getenv("DB_PATH", "./data/yrc.db")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
-BRIEF_HOUR = int(os.getenv("BRIEF_HOUR", "7"))
-BRIEF_MINUTE = int(os.getenv("BRIEF_MINUTE", "0"))
+BRIEF_HOUR = int(os.getenv("BRIEF_HOUR", "8"))
+BRIEF_MINUTE = int(os.getenv("BRIEF_MINUTE", "25"))
+EVENING_HOUR = int(os.getenv("EVENING_HOUR", "22"))
+EVENING_MINUTE = int(os.getenv("EVENING_MINUTE", "45"))
 TZ = os.getenv("TZ", "Asia/Seoul")
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
