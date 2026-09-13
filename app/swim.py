@@ -346,4 +346,5 @@ def briefing_text(summary: dict, mode: str = "morning") -> str:
     if diet.get("to_goal_kg") is not None:
         tail += f" · 목표까지 {diet['to_goal_kg']}kg (주 0.5kg 기준 {diet['weeks_to_goal']}주)"
     lines.append(tail)
+    lines.append("오늘도 물살 가르기 화이팅! 💪🌊")
     return "\n".join(lines)
