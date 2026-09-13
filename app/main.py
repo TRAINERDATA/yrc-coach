@@ -27,17 +27,21 @@ log = logging.getLogger("yrc")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init()
-    sched = BackgroundScheduler(timezone=config.TZ)
-    # 서버가 깨어 있으면(UptimeRobot 등으로 5분마다 ping) 내부 스케줄러가 직접 브리핑을 보낸다. GitHub Actions 는 백업.
-    sched.add_job(lambda: pipeline.run_all(send=True), CronTrigger(hour=config.BRIEF_HOUR, minute=config.BRIEF_MINUTE),
-                  id="morning_brief", misfire_grace_time=1800)
-    sched.add_job(lambda: pipeline.run_evening(send=True), CronTrigger(hour=config.EVENING_HOUR, minute=config.EVENING_MINUTE),
-                  id="evening_brief", misfire_grace_time=1800)
-    sched.start()
-    log.info("scheduler started: morning %02d:%02d, evening %02d:%02d %s", config.BRIEF_HOUR, config.BRIEF_MINUTE,
-             config.EVENING_HOUR, config.EVENING_MINUTE, config.TZ)
+    import os
+    sched = None
+    if os.getenv("ENABLE_INTERNAL_SCHEDULER", "0") == "1":
+        sched = BackgroundScheduler(timezone=config.TZ)
+        sched.add_job(lambda: pipeline.run_all(send=True), CronTrigger(hour=config.BRIEF_HOUR, minute=config.BRIEF_MINUTE),
+                      id="morning_brief", misfire_grace_time=600)
+        sched.add_job(lambda: pipeline.run_evening(send=True), CronTrigger(hour=config.EVENING_HOUR, minute=config.EVENING_MINUTE),
+                      id="evening_brief", misfire_grace_time=600)
+        sched.start()
+        log.info("internal scheduler ON: %02d:%02d / %02d:%02d", config.BRIEF_HOUR, config.BRIEF_MINUTE, config.EVENING_HOUR, config.EVENING_MINUTE)
+    else:
+        log.info("internal scheduler OFF (phone shortcuts trigger briefings)")
     yield
-    sched.shutdown(wait=False)
+    if sched:
+        sched.shutdown(wait=False)
 
 
 app = FastAPI(title="YRC Running Coach", lifespan=lifespan)
@@ -182,11 +186,17 @@ def brief_run(token: str, send: bool = True, mode: str = "auto", force: bool = F
     """오늘 이미 보냈으면 건너뜀 (중복 방지). 다시 보내려면 ?force=true
     mode=auto: 수영 사용자는 17시 이후 호출이면 저녁 브리핑, 그 외는 아침 브리핑 (단축어가 업로드 직후 호출하는 용도)"""
     user = _user_or_404(token)
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    hour = datetime.now(ZoneInfo(config.TZ)).hour
     if mode == "auto":
-        from datetime import datetime
-        from zoneinfo import ZoneInfo
-        hour = datetime.now(ZoneInfo(config.TZ)).hour
         mode = "evening" if ((user.get("sport") or "run") == "swim" and hour >= 17) else "morning"
+    if not force:
+        # 아침 브리핑은 05~13시, 저녁 브리핑은 20~23시에만 (예약 실행이 늦게 돌아 새벽에 오는 사고 방지)
+        if mode == "morning" and not 5 <= hour <= 13:
+            return {"user": user["name"], "skipped": True, "reason": f"morning window closed (hour={hour})"}
+        if mode == "evening" and not 20 <= hour <= 23:
+            return {"user": user["name"], "skipped": True, "reason": f"evening window closed (hour={hour})"}
     res = pipeline.run_for_user(user, send=send, force=force, mode=mode)
     res.pop("summary", None)
     return res

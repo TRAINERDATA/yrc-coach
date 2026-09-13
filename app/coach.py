@@ -102,9 +102,17 @@ def rule_based_briefing(summary: dict) -> str:
 
     # ---- 짧은 형식: 숫자·그래프는 카드 이미지에 있으므로 글은 판단과 지시만 ----
     d = summary["date"]
-    head = f"🏃 {int(d[5:7])}/{int(d[8:10])}({summary['weekday']}) 브리핑 · 컨디션 {ready}"
+    ready_emoji = {"good": "😊", "caution": "🙂", "rest": "😴"}[r["readiness"]]
+    head = f"🏃‍♂️ {int(d[5:7])}/{int(d[8:10])}({summary['weekday']}) 러닝 브리핑 · 컨디션 {ready} {ready_emoji}"
     if r["flags"]:
         head += f" · {r['flags'][0]}"
+    # 이번 주 출석 (월~일)
+    from datetime import date as _date, timedelta as _td
+    _t = _date.fromisoformat(d)
+    _mon = _t - _td(days=_t.weekday())
+    _active = {x["date"] for x in (summary.get("recent_runs") or []) if x.get("date")}
+    stamps = "".join("🏃" if (_mon + _td(days=i)).isoformat() in _active else ("⬜" if _mon + _td(days=i) > _t else "▫️") for i in range(7))
+    att_line = f"📅 이번 주 출석 {stamps} {sum(1 for i in range(7) if (_mon + _td(days=i)).isoformat() in _active)}/7"
 
     # 어제 한 줄
     yline = ""
@@ -150,7 +158,7 @@ def rule_based_briefing(summary: dict) -> str:
     if v.get("acwr") and v["acwr"] > 1.3:
         warn_line = "⚠️ 훈련량이 평소보다 많아요 → 다음 주는 유지/감량"
 
-    lines = [head]
+    lines = [head, att_line]
     if yline:
         lines.append(yline)
     lines.append("")
@@ -161,6 +169,7 @@ def rule_based_briefing(summary: dict) -> str:
     lines.append(week_line)
     if warn_line:
         lines.append(warn_line)
+    lines.append("오늘도 화이팅! 💪")
     return "\n".join(lines)
 
 

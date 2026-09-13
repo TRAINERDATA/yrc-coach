@@ -65,7 +65,7 @@ def build_summary(user: dict, today: date | None = None) -> dict:
     km_prev7 = round(sum(w["distance_km"] for w in prev7), 1)
     km28 = round(sum(w["distance_km"] for w in last28), 1)
     chronic_weekly = km28 / 4 if km28 else 0
-    acwr = round(km7 / chronic_weekly, 2) if chronic_weekly >= 5 else None
+    acwr = round(km7 / chronic_weekly, 2) if (chronic_weekly >= 5 and (km28 - km7) >= 5) else None
 
     daily_load = {}
     for w in last7:

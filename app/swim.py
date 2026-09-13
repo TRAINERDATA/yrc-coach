@@ -57,7 +57,8 @@ def build_summary(user: dict, today: date | None = None) -> dict:
     m_prev7 = round(sum(w["distance_km"] for w in prev7) * 1000)
     m28 = round(sum(w["distance_km"] for w in last28) * 1000)
     chronic = m28 / 4
-    acwr = round(m7 / chronic, 2) if chronic >= 500 else None
+    prev21_m = m28 - m7
+    acwr = round(m7 / chronic, 2) if (chronic >= 500 and prev21_m >= 500) else None
     kcal7 = round(sum(w.get("energy_kcal") or 0 for w in last7))
     min7 = round(sum(w.get("duration_s") or 0 for w in last7) / 60)
 
@@ -165,7 +166,7 @@ def diet_plan(summary: dict) -> dict:
                 f"닭가슴살 200g + 양배추 + 감자 1개"][i]
         return base + f" ≈{dn}kcal"
 
-    lunch = (f"구내식당 ≈{lunch_fixed}kcal — 밥은 2/3만, 국물은 건더기만, 튀김·볶음 1개 이하, 단백질 반찬(생선·고기·두부) 먼저"
+    lunch = (f"구내식당 ≈{lunch_fixed}kcal · 밥 2/3 · 국물은 건더기만 · 튀김 1개 이하 · 단백질 반찬 먼저"
              if lunch_fixed else "잡곡밥 2/3 + 단백질 반찬 + 나물 2가지 (국물은 건더기만)")
     idx = date.fromisoformat(summary["date"]).toordinal() % 7
     out["meals"] = {"아침": bk_menu(idx), "점심": lunch, "저녁": dn_menu(idx)}
@@ -304,10 +305,16 @@ def briefing_text(summary: dict, mode: str = "morning") -> str:
         lines.append(f"⚖️ 이번 주 {v['last7_m']:,}m · {v['kcal_last7']:,}kcal 소모")
         return "\n".join(lines)
 
-    head = f"🏊 {int(d[5:7])}/{int(d[8:10])}({summary['weekday']}) 수영 브리핑 · 컨디션 {ready}"
+    ready_emoji = {"good": "😊", "caution": "🙂", "rest": "😴"}[r["readiness"]]
+    head = f"🏊‍♂️ {int(d[5:7])}/{int(d[8:10])}({summary['weekday']}) 수영 브리핑 · 컨디션 {ready} {ready_emoji}"
     if r["flags"]:
         head += f" · {r['flags'][0]}"
     lines.append(head)
+    _t = date.fromisoformat(d)
+    _mon = _t - timedelta(days=_t.weekday())
+    _active = {x["date"] for x in (summary.get("recent_sessions") or [])}
+    stamps = "".join("🏊" if (_mon + timedelta(days=i)).isoformat() in _active else ("⬜" if _mon + timedelta(days=i) > _t else "▫️") for i in range(7))
+    lines.append(f"📅 이번 주 출석 {stamps} {sum(1 for i in range(7) if (_mon + timedelta(days=i)).isoformat() in _active)}/7")
     ys = summary.get("yesterday_sessions") or []
     if ys:
         lines.append("어제 " + " / ".join(_session_line(y) for y in ys[:2]))

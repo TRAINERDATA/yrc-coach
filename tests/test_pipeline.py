@@ -168,7 +168,7 @@ def test_plan_goal_parsing_and_briefing():
         "recovery": {"today": {}, "baseline30d": {}, "flags": ["부하 급증 ACWR 1.56"], "readiness": "caution"},
         "yesterday_runs": [{"date": "2026-09-08", "km": 5.01, "time_min": 30.2, "pace": "6'02\"", "avg_hr": 172, "max_hr": 188, "load": 27}],
         "days_since_last_run": 1, "streak_days": 1,
-        "recent_runs": [{"pace": "6'02\""}, {"pace": "6'44\""}, {"pace": "6'37\""}, {"pace": "7'02\""}],
+        "recent_runs": [{"date": "2026-09-08", "pace": "6'02\""}, {"date": "2026-09-06", "pace": "6'44\""}, {"date": "2026-09-03", "pace": "6'37\""}, {"date": "2026-09-01", "pace": "7'02\""}],
         "data_points": {"runs_56d": 10, "metric_days_35d": 26},
     }
     text = coach.rule_based_briefing(summary)

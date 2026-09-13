@@ -16,32 +16,8 @@ from matplotlib.patches import FancyBboxPatch  # noqa: E402
 
 from . import config  # noqa: E402
 
-# 팔레트 (딥 네이비 + 틸 포인트, 상태색은 별도)
-BG, PANEL, PANEL2 = "#0b1220", "#141c2e", "#1b2540"
-TXT, TXT2, MUTED, GRID = "#eef2f8", "#c7d0df", "#8b97ad", "#243050"
-ACCENT, HIST = "#2dd4bf", "#3b82f6"
-GOOD, WARN, BAD = "#34d399", "#fbbf24", "#f87171"
-ZONE_EASY, ZONE_MID, ZONE_HARD = "#38bdf8", "#fbbf24", "#f87171"
-
-_FONT_READY = False
-FONT = "sans-serif"
-
-
-def _setup_font():
-    global _FONT_READY, FONT
-    if _FONT_READY:
-        return
-    fams = []
-    for name in ("Pretendard-Regular.otf", "Pretendard-SemiBold.otf", "Pretendard-Bold.otf", "NanumGothic.ttf"):
-        p = config.ASSETS_DIR / name
-        if p.exists():
-            font_manager.fontManager.addfont(str(p))
-            fams.append(font_manager.FontProperties(fname=str(p)).get_name())
-    if fams:
-        FONT = fams[0]
-        plt.rcParams["font.family"] = [FONT] + [f for f in fams[1:] if f != FONT]
-    plt.rcParams["axes.unicode_minus"] = False
-    _FONT_READY = True
+from .cardkit import (LINE, ACCENT_RUN as ACCENT, BG, GOOD, BAD, WARN, GRID, HIST, MUTED, PANEL, PANEL2, TXT, TXT2, WEEKDAYS,
+                      ZONE_EASY, ZONE_MID, ZONE_HARD, attendance, emoji, header, panel as _panel, rounded as _rounded, setup_font as _setup_font)
 
 
 def _pace_label(sec):
@@ -49,28 +25,6 @@ def _pace_label(sec):
         return "-"
     m, s = divmod(int(round(sec)), 60)
     return f"{m}'{s:02d}\""
-
-
-def _panel(ax, title=None, sub=None):
-    """둥근 패널 배경 + 제목/부제. 축이 꺼진 패널에도 배경이 보이도록 패치로 그린다."""
-    ax.set_facecolor("none")
-    ax.add_patch(FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0,rounding_size=0.03", transform=ax.transAxes,
-                                facecolor=PANEL, edgecolor="none", clip_on=False, zorder=-5))
-    for sp in ax.spines.values():
-        sp.set_visible(False)
-    ax.tick_params(colors=MUTED, labelsize=9.5, length=0)
-    ax.grid(True, axis="y", color=GRID, linewidth=0.8)
-    ax.grid(False, axis="x")
-    ax.set_axisbelow(True)
-    if title:
-        ax.text(0, 1.20, title, color=TXT, fontsize=13.5, fontweight="bold", transform=ax.transAxes, va="bottom")
-    if sub:
-        ax.text(0, 1.06, sub, color=MUTED, fontsize=8.5, transform=ax.transAxes, va="bottom")
-
-
-def _rounded(ax, x, y, w, h, color, r=0.02):
-    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", transform=ax.transAxes,
-                                facecolor=color, edgecolor="none", clip_on=False))
 
 
 def _delta_text(cur, prev, unit="", lower_is_better=False, fmt=lambda x: f"{x:g}"):
@@ -90,23 +44,23 @@ def render_card(summary: dict) -> bytes:
     fit, ch = summary.get("fitness", {}) or {}, summary.get("charts", {}) or {}
     d = date.fromisoformat(summary["date"])
 
-    fig = plt.figure(figsize=(9, 12.6), dpi=140, facecolor=BG)
-    gs = fig.add_gridspec(5, 2, height_ratios=[0.42, 0.55, 1.3, 1.5, 1.25], hspace=0.72, wspace=0.26,
-                          left=0.06, right=0.95, top=0.965, bottom=0.04)
+    fig = plt.figure(figsize=(9, 13.8), dpi=140, facecolor=BG)
+    gs = fig.add_gridspec(6, 2, height_ratios=[0.42, 0.75, 0.55, 1.3, 1.5, 1.25], hspace=0.68, wspace=0.26,
+                          left=0.06, right=0.95, top=0.968, bottom=0.04)
 
     # ================= 헤더 =================
     hd = fig.add_subplot(gs[0, :])
-    hd.axis("off")
-    hd.text(0, 1.0, "YRC RUNNING BRIEF", color=ACCENT, fontsize=10.5, fontweight="bold", va="top", letterspacing=2) if False else \
-        hd.text(0, 1.0, "Y R C   R U N N I N G   B R I E F", color=ACCENT, fontsize=9.5, fontweight="bold", va="top")
-    hd.text(0, 0.62, f"{u['name']}님의 아침 브리핑", color=TXT, fontsize=24, fontweight="bold", va="top")
-    hd.text(0, 0.12, f"{d.year}년 {d.month}월 {d.day}일 {summary['weekday']}요일", color=MUTED, fontsize=11.5, va="top")
     ready = {"good": ("컨디션 좋음", GOOD), "caution": ("오늘은 조심", WARN), "rest": ("휴식 권장", BAD)}[r["readiness"]]
-    _rounded(hd, 0.80, 0.55, 0.20, 0.34, ready[1], r=0.12)
-    hd.text(0.90, 0.72, ready[0], color=BG, fontsize=12.5, fontweight="bold", ha="center", va="center", transform=hd.transAxes)
+    header(fig, hd, f"{u['name']}님의 러닝 브리핑", f"{d.year}년 {d.month}월 {d.day}일 {summary['weekday']}요일", ready,
+           ACCENT, "run", "Y R C   R U N N I N G   B R I E F")
+
+    # ================= 출석 달력 =================
+    at = fig.add_subplot(gs[1, :])
+    active = {x["date"] for x in (summary.get("recent_runs") or [])}
+    attendance(fig, at, d, active, "run", ACCENT)
 
     # ================= KPI 타일 3개 =================
-    kp = fig.add_subplot(gs[1, :])
+    kp = fig.add_subplot(gs[2, :])
     kp.axis("off")
     pace_now = t.get("avg_pace_last14")
     pace_prev = t.get("avg_pace_prev14")
@@ -132,13 +86,13 @@ def render_card(summary: dict) -> bytes:
     cad_target = cp.get("target") if cad_avg else None
     for i, (label, big, sub, subcol) in enumerate(tiles):
         x = i * 0.345
-        _rounded(kp, x, 0, 0.31, 1.0, PANEL, r=0.06)
+        _rounded(kp, x, 0, 0.31, 1.0, PANEL, r=0.06, edge=LINE)
         kp.text(x + 0.03, 0.80, label, color=MUTED, fontsize=9.5, va="center", transform=kp.transAxes)
         kp.text(x + 0.03, 0.46, big, color=TXT, fontsize=21, fontweight="bold", va="center", transform=kp.transAxes)
         kp.text(x + 0.03, 0.15, sub, color=subcol, fontsize=8.8, va="center", transform=kp.transAxes)
 
     # ================= 주간 거리 8주 =================
-    ax = fig.add_subplot(gs[2, 0])
+    ax = fig.add_subplot(gs[3, 0])
     weeks = ch.get("weeks") or []
     labels = [w["label"] for w in weeks]
     kms = [w["km"] for w in weeks]
@@ -153,19 +107,18 @@ def render_card(summary: dict) -> bytes:
     ax.set_xticklabels(labels)
     ax.set_yticks([])
     ax.set_ylim(0, max(kms + [10]) * 1.25)
-    _panel(ax, "주간 거리", "최근 8주 · km · 초록 = 이번 주(진행 중)")
+    _panel(ax, "주간 거리", "최근 8주 · km · 색 진한 막대 = 이번 주(진행 중)", icon="chart", fig=fig)
 
     # ================= 훈련량 게이지 =================
-    ax = fig.add_subplot(gs[2, 1])
+    ax = fig.add_subplot(gs[3, 1])
     ax.axis("off")
-    _panel(ax, "이번 주 훈련량", "지난 7일 거리 ÷ 최근 4주 평균 · 1.0 = 평소 수준")
-    ax.set_facecolor(PANEL)
+    _panel(ax, "이번 주 훈련량", "지난 7일 거리 ÷ 최근 4주 평균 · 1.0 = 평소 수준", icon="bolt", fig=fig)
     acwr = v.get("acwr")
     gx0, gx1, gy, gh = 0.05, 0.95, 0.60, 0.16
     scale = lambda val: gx0 + (gx1 - gx0) * min(max(val, 0), 2.0) / 2.0
-    for lo, hi, col in ((0, 0.8, "#334155"), (0.8, 1.3, GOOD), (1.3, 1.5, WARN), (1.5, 2.0, BAD)):
+    for lo, hi, col in ((0, 0.8, "#cfd6e0"), (0.8, 1.3, GOOD), (1.3, 1.5, WARN), (1.5, 2.0, BAD)):
         ax.add_patch(FancyBboxPatch((scale(lo), gy), scale(hi) - scale(lo), gh, boxstyle="round,pad=0,rounding_size=0.01",
-                                    transform=ax.transAxes, facecolor=col, alpha=0.35 if col != "#334155" else 1, edgecolor="none"))
+                                    transform=ax.transAxes, facecolor=col, alpha=0.45 if col != "#cfd6e0" else 1, edgecolor="none"))
     for val, name in ((0.8, "0.8"), (1.3, "1.3"), (1.5, "1.5")):
         ax.text(scale(val), gy - 0.06, name, color=MUTED, fontsize=8.5, ha="center", transform=ax.transAxes)
     ax.text(scale(1.05), gy + gh + 0.05, "안전", color=GOOD, fontsize=9, ha="center", transform=ax.transAxes)
@@ -182,9 +135,9 @@ def render_card(summary: dict) -> bytes:
         ax.text(0.05, 0.30, "기록이 더 필요해요", color=MUTED, fontsize=12, transform=ax.transAxes, va="center")
 
     # ================= 최근 러닝 표 =================
-    ax = fig.add_subplot(gs[3, :])
+    ax = fig.add_subplot(gs[4, :])
     ax.axis("off")
-    _panel(ax, "최근 러닝", f"최근 14일 · 막대 = 거리 · 페이스 · 평균 심박 · 케이던스 (초록 = 이번 주 목표 {cad_target or '-'} 달성)")
+    _panel(ax, "최근 러닝", icon="run", fig=fig, sub=f"최근 14일 · 막대 = 거리 · 페이스 · 평균 심박 · 케이던스 (초록 = 이번 주 목표 {cad_target or '-'} 달성)")
     runs = (summary.get("recent_runs") or [])[:6]
     pz = fit.get("paces_sec") or {}
     if runs:
@@ -227,9 +180,9 @@ def render_card(summary: dict) -> bytes:
         ax.text(0.5, 0.5, "최근 14일 러닝 기록이 없어요", color=MUTED, ha="center", transform=ax.transAxes)
 
     # ================= 강도 분포 =================
-    ax = fig.add_subplot(gs[4, 0])
+    ax = fig.add_subplot(gs[5, 0])
     ax.axis("off")
-    _panel(ax, "강도 분포", "최근 28일 러닝 시간 · 심박 존 기준")
+    _panel(ax, "강도 분포", "최근 28일 러닝 시간 · 심박 존 기준", icon="fire", fig=fig)
     zm = fit.get("zone_minutes_28d") or {}
     g = lambda z: zm.get(str(z), zm.get(z, 0))
     easy, mid, hard = g(1) + g(2) + g(3), g(4), g(5)
@@ -241,7 +194,7 @@ def render_card(summary: dict) -> bytes:
             if w > 0:
                 _rounded(ax, x, 0.62, max(w - 0.006, 0.004), 0.2, col, r=0.01)
                 if w > 0.08:
-                    ax.text(x + w / 2, 0.72, f"{name} {val / tot * 100:.0f}%", color=BG, fontsize=9.5, fontweight="bold",
+                    ax.text(x + w / 2, 0.72, f"{name} {val / tot * 100:.0f}%", color="white", fontsize=9.5, fontweight="bold",
                             ha="center", va="center", transform=ax.transAxes)
                 x += w
         share = round(easy / tot * 100)
@@ -257,9 +210,9 @@ def render_card(summary: dict) -> bytes:
         ax.text(0.5, 0.5, "심박 기록이 더 필요해요", color=MUTED, ha="center", transform=ax.transAxes)
 
     # ================= 훈련 페이스 & 예상 기록 =================
-    ax = fig.add_subplot(gs[4, 1])
+    ax = fig.add_subplot(gs[5, 1])
     ax.axis("off")
-    _panel(ax, "권장 훈련 페이스", "최근 최고 기록으로 계산 (VDOT)")
+    _panel(ax, "권장 훈련 페이스", "최근 최고 기록으로 계산 (VDOT)", icon="target", fig=fig)
     p = fit.get("paces") or {}
     rows = [("쉬운 러닝", f"{p.get('E_slow', '-')} ~ {p.get('E', '-')}", ZONE_EASY),
             ("템포 (20분 유지)", p.get("T", "-"), ZONE_MID),
