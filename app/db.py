@@ -291,6 +291,7 @@ def list_users(active_only: bool = True) -> list:
 
 # ---------- workouts ----------
 def upsert_workouts(user_id: int, rows: Iterable[dict]) -> int:
+    rows = list(rows)
     n = 0
     with conn() as c:
         for w in rows:
@@ -310,6 +311,12 @@ def upsert_workouts(user_id: int, rows: Iterable[dict]) -> int:
                 ),
             )
             n += 1
+        # 단축어 근사치끼리: 같은 사용자·같은 시간대의 옛 근사치는 새 것으로 대체 (시작 시각이 06:00→06:50 로 바뀌어도 하나만)
+        for w in rows:
+            if w.get("source", "health_auto_export") == "shortcut_hourly":
+                c.execute("""DELETE FROM workouts WHERE user_id=? AND source='shortcut_hourly' AND COALESCE(sport,'run')=?
+                             AND substr(start,1,13)=substr(?,1,13) AND start<>?""",
+                          (user_id, w.get("sport") or "run", w["start"], w["start"]))
         # 같은 시간대에 정확한 기록(건강앱 내보내기/Strava 등)이 있으면 단축어 근사치는 제거
         c.execute(
             """DELETE FROM workouts WHERE source='shortcut_hourly' AND user_id=? AND EXISTS (
@@ -359,7 +366,12 @@ def metrics_since(user_id: int, days: int) -> list:
 
 # ---------- raw payloads (debug) ----------
 def save_raw_payload(user_id: int, payload: dict):
-    body = json.dumps(payload, ensure_ascii=False)[:200000]
+    body = json.dumps(payload, ensure_ascii=False)
+    if len(body) > 200000 and isinstance(payload.get("hourly"), dict):  # 잘라도 JSON 이 깨지지 않게 섹션별로 줄임
+        slim = dict(payload)
+        slim["hourly"] = {k: ("\n".join(str(v).splitlines()[:400]) + "\n…(truncated)") if len(str(v)) > 20000 else v
+                          for k, v in payload["hourly"].items()}
+        body = json.dumps(slim, ensure_ascii=False)[:200000]
     with conn() as c:
         c.execute(
             """INSERT INTO raw_payloads (user_id, received_at, body) VALUES (?,?,?)

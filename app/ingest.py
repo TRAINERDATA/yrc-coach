@@ -355,7 +355,26 @@ def parse_hourly(payload: dict) -> list:
     # 수영: 수영 거리(m, 시간별 합계, Watch) · 스트로크 수(시간별 합계)
     swim = table("swim", lambda v: (_num(v) * 1000 if _units(v) == "km" else (_num(v) * 0.9144 if _units(v) in ("yd", "yard", "yards") else _num(v))))
     strokes = table("strokes", _num)
-    payload.setdefault("_swim", {"swim": swim, "strokes": strokes, "hr_samples": hr_samples, "hr_raw_mode": hr_raw_mode, "energy": energy})
+
+    def points(name: str, conv) -> list:
+        """(정확한 시각, 값) 목록 — 시간별로 뭉개지 않은 원본 샘플."""
+        out = []
+        dates, values = lines(h.get(f"{name}_dates")), lines(h.get(f"{name}_values"))
+        if dates and values and len(dates) == len(values):
+            for d_, v_ in zip(dates, values):
+                dt, val = parse_dt(d_), conv(v_)
+                if dt and val is not None:
+                    out.append((dt, val))
+        for s in items(name):
+            if isinstance(s, dict):
+                dt, val = parse_dt(s.get("start") or s.get("date")), conv(s.get("value") if "value" in s else s.get("qty"))
+                if dt and val is not None:
+                    out.append((dt, val))
+        out.sort()
+        return out
+
+    payload.setdefault("_swim", {"swim": swim, "strokes": strokes, "hr_samples": hr_samples, "hr_raw_mode": hr_raw_mode, "energy": energy,
+                                 "stroke_points": points("strokes", _num), "hr_points": points("hr", _num)})
 
     run_hours = sorted(k for k, v in speed.items() if v >= 5.5)
     runs, block = [], []
@@ -432,29 +451,44 @@ def parse_swim_hourly(payload: dict) -> list:
         blk.append(k)
     if blk:
         blocks.append(blk)
+    stroke_points = sw.get("stroke_points") or []
+    hr_points = sw.get("hr_points") or []
     out = []
     for hours in blocks:
         meters = sum(swim.get(k, 0) for k in hours)
         if meters < 100:
             continue
-        samples = [x for k in hours for x in hr_samples.get(k, [])] if raw_mode else []
-        if len(samples) >= 30:
-            dur = len(samples) * HR_SAMPLE_INTERVAL_S
-            avg_hr, max_hr, method = round(sum(samples) / len(samples), 1), max(samples), "hr_samples"
+        h0, h1 = parse_dt(hours[0]), parse_dt(hours[-1]) + timedelta(hours=1)
+        # 바퀴(25m)마다 남는 스트로크 샘플(그룹화 없음으로 보낸 경우): 첫 바퀴~마지막 바퀴 시각 = 세션 시간
+        laps = [(t, v) for t, v in stroke_points if h0 <= t < h1]
+        if len(laps) >= 3:
+            start, last = laps[0][0], laps[-1][0]
+            dur = (last - start).total_seconds() + 35  # 마지막 바퀴 시간 보정
+            st = sum(v for _, v in laps)
+            span_hr = [v for t, v in hr_points if start <= t <= last + timedelta(seconds=60) and 60 <= v <= 220]
+            avg_hr = round(sum(span_hr) / len(span_hr), 1) if span_hr else None
+            max_hr = max(span_hr) if span_hr else None
+            method, lengths = "lap_samples", len(laps)
         else:
-            dur = meters / 100 * 150  # 심박 없으면 100m 2:30 가정
-            avg_hr, max_hr, method = None, None, "assumed_pace"
-        st = sum(strokes.get(k, 0) for k in hours) or None
+            start = h0
+            samples = [x for k in hours for x in hr_samples.get(k, [])] if raw_mode else []
+            if len(samples) >= 30:
+                dur = len(samples) * HR_SAMPLE_INTERVAL_S
+                avg_hr, max_hr, method = round(sum(samples) / len(samples), 1), max(samples), "hr_samples"
+            else:
+                dur = meters / 100 * 150  # 심박 없으면 100m 2:30 가정
+                avg_hr, max_hr, method = None, None, "assumed_pace"
+            st = sum(strokes.get(k, 0) for k in hours) or None
+            lengths = None
         kcal = sum(energy.get(k, 0) for k in hours) or None
-        start = parse_dt(hours[0])
         out.append({
-            "start": start.isoformat(timespec="seconds"),
+            "start": start.replace(second=0).isoformat(timespec="seconds"),
             "end": (start + timedelta(seconds=dur)).isoformat(timespec="seconds"),
             "duration_s": round(dur), "distance_km": round(meters / 1000, 3),
             "avg_hr": avg_hr, "max_hr": max_hr, "cadence": None, "sport": "swim",
             "strokes": round(st) if st else None, "energy_kcal": round(kcal) if kcal else None, "elev_gain_m": None,
             "source": "shortcut_hourly",
-            "raw": {"hours": hours, "method": method, "hr_samples": len(samples), "meters": round(meters)},
+            "raw": {"hours": hours, "method": method, "lengths": lengths, "meters": round(meters)},
         })
     return out
 
